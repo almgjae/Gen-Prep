@@ -63,7 +63,7 @@
   h2{font-size:18px; margin:0 0 6px 0}
   label{color:var(--text)}
   .grid{display:grid; gap:12px}
-  .grid-2{grid-template-columns: 1fr 1fr} /* Reverted to default 1fr 1fr */
+  .grid-2{grid-template-columns: 1fr 1fr}
   .grid-3{grid-template-columns: repeat(3, 1fr)}
   .grid-4{grid-template-columns: repeat(4, 1fr)}
   .menu-btn{display:none}
@@ -96,7 +96,7 @@
   details{border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--bg2)}
   summary{cursor:pointer; font-weight:600}
   textarea{
-    min-height:250px;
+    min-height:120px;
     resize:vertical;
     overflow: hidden;
   }
@@ -378,7 +378,7 @@
             </div>
             <div id="srbView" class="srb-box" title="더블클릭 편집">${esc(s.srb || "생기부 텍스트 없음 (더블클릭 또는 편집으로 입력)")}</div>
             <div id="srbEdit" style="display:none">
-              <textarea id="srbTextarea" class="field" placeholder="이 교과의 생기부를 붙여넣거나 작성하세요." style="min-height: 250px">${escAttr(s.srb||"")}</textarea>
+              <textarea id="srbTextarea" class="field" placeholder="이 교과의 생기부를 붙여넣거나 작성하세요.">${escAttr(s.srb||"")}</textarea>
               <div class="toolbar">
                 <button class="button small">저장</button>
                 <button class="button ghost small">취소</button>
@@ -704,10 +704,10 @@
             </div>
             <div class="col" style="margin-top:12px">
               <div class="row" style="justify-content:space-between; align-items:flex-end">
-                <label>생기부 텍스트</label>
-                <div class="muted" id="srbByteCount"></div>
+                  <label>생기부 텍스트</label>
+                  <div class="muted" id="srbByteCount"></div>
               </div>
-              <textarea id="srbTextarea" class="field" placeholder="여기에 생기부 내용을 붙여넣으세요." style="min-height: 250px">${escAttr(s?.srb || '')}</textarea>
+              <textarea id="srbTextarea" class="field" placeholder="여기에 생기부 내용을 붙여넣으세요.">${escAttr(s?.srb || '')}</textarea>
             </div>
           </div>
           <div class="card">
