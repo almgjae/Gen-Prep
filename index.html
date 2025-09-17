@@ -757,7 +757,7 @@
             <div class="col">
               <label>교과 선택</label>
               <select class="field" id="subjectSelector">
-                <option value="">- 과목을 선택해 주세요요 -</option>
+                <option value="">- 과목을 선택해 주세요 -</option>
                 ${this.state.subjects.map(sub => `<option value="${sub.id}" ${sub.id === subId ? 'selected' : ''}>${esc(sub.name)}</option>`).join('')}
               </select>
             </div>
