@@ -24,8 +24,8 @@
   .sidebar{
     border-right:1px solid var(--border); background:rgba(15,23,42,.08);
     backdrop-filter: blur(6px); padding:16px 12px; display:flex; flex-direction:column; gap:12px;
-    height: 100%; /* Fix: Sidebar height to 100% for independent scrolling */
-    overflow-y: auto; /* Fix: Allow sidebar to scroll */
+    height: 100%;
+    overflow-y: auto;
   }
   .brand{display:flex; align-items:center; gap:10px; font-weight:700}
   .brand svg{width:20px;height:20px}
@@ -69,13 +69,13 @@
   .menu-btn{display:none}
   .subject-add-box{ max-width: 140px; }
   
-  /* Fix: Hide scrollbars */
+  /* Hide scrollbars */
   ::-webkit-scrollbar {
     width: 0;
     height: 0;
   }
   * {
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
   }
 
   @media (max-width: 1000px){
@@ -84,6 +84,14 @@
     .sidebar.open{transform:translateY(0)}
     .grid-2 { grid-template-columns: 1fr; }
     .menu-btn{display:block}
+    
+    /* Mobile-specific changes for subject table */
+    .table thead th:nth-child(3),
+    .table tbody td:nth-child(3),
+    .table thead th:nth-child(4),
+    .table tbody td:nth-child(4) {
+      display: none;
+    }
   }
 
   .empty{padding:18px; border:1px dashed var(--border); border-radius:12px; color:var(--muted); background:rgba(2,6,23,.03)}
@@ -92,7 +100,7 @@
   textarea{
     min-height:120px;
     resize:vertical;
-    overflow: hidden; /* Fix: Hide scrollbar for auto-expanding textareas */
+    overflow: hidden;
   }
   .srb-box{white-space:pre-wrap; background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:12px; min-height:220px; overflow-wrap: break-word; overflow-y: auto;}
   .toolbar{display:flex; gap:8px; justify-content:flex-end; margin-top:10px; flex-wrap:wrap}
@@ -212,7 +220,6 @@
           this.app.classList.toggle("collapsed");
         }
       });
-      // Fix: Close sidebar when a main nav item is clicked on mobile
       this.mainNav.addEventListener("click", (e) => {
           if (e.target.tagName === 'A' && window.innerWidth <= 1000) {
               this.sidebar.classList.remove("open");
@@ -244,7 +251,6 @@
       if(this.state.selectedSubjectId===id) this.state.selectedSubjectId = this.state.subjects[0]?.id || null;
       this.save(); 
       this.renderSidebar(); 
-      // Fix: Call viewSubjects() directly to ensure immediate re-render
       this.viewSubjects();
       location.hash = "#/subjects";
       this.toast("삭제되었습니다");
@@ -747,12 +753,12 @@
         if(done) return;
         if(e.code==="Space"){ e.preventDefault(); next(false); }
         if(e.key.toLowerCase()==="s"){ const q = qs[idx]; if(bookmarked.has(q.id)) bookmarked.delete(q.id); else bookmarked.add(q.id); render(); }
-        if(hasTimer && e.key.toLowerCase()==="p"){ togglePause(); } // 'p' for pause
+        if(hasTimer && e.key.toLowerCase()==="p"){ togglePause(); }
         if(hasTimer && e.key.toLowerCase()==="r"){ restartQuestion(); }
       };
     },
     
-    // Fix: Auto-resize all relevant textareas
+    // Auto-resize all relevant textareas
     autoExpandTextarea(el) {
       el.style.height = 'auto';
       el.style.height = el.scrollHeight + 'px';
@@ -762,7 +768,7 @@
       const textareas = $$('textarea.field');
       textareas.forEach(el => {
         el.addEventListener('input', () => this.autoExpandTextarea(el));
-        this.autoExpandTextarea(el); // Initial resize on load
+        this.autoExpandTextarea(el);
       });
     }
   };
