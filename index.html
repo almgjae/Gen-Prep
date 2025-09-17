@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>생기부 면접 준비 · 개인형 (로컬 · 다크 · 타이머 · 힌트)</title>
+<style>
+  :root{
+    --bg:#0f172a; --bg2:#0b1022; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb;
+    --accent:#7c3aed; --accent2:#22d3ee; --danger:#ef4444; --ok:#10b981; --border:#1f2937;
+    --chip:#1e293b; --shadow: rgba(2,6,23,.3);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:linear-gradient(135deg, var(--bg), var(--bg2)); color:var(--text);
+    font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Arial,"Apple Color Emoji","Segoe UI Emoji";
+    letter-spacing:.2px;
+  }
+  a{color:inherit; text-decoration:none}
+  .app{display:grid; grid-template-columns: 280px 1fr; height:100%; transition: grid-template-columns .2s ease-in-out;}
+  .app.collapsed { grid-template-columns: 0px 1fr; }
+  .app.collapsed .sidebar { transform: translateX(-100%); transition: transform .2s ease-in-out; }
+  .sidebar{
+    border-right:1px solid var(--border); background:rgba(15,23,42,.08);
+    backdrop-filter: blur(6px); padding:16px 12px; display:flex; flex-direction:column; gap:12px;
+    height: 100%; /* Fix: Sidebar height to 100% for independent scrolling */
+    overflow-y: auto; /* Fix: Allow sidebar to scroll */
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-weight:700}
+  .brand svg{width:20px;height:20px}
+  .pill{font-size:12px; padding:2px 8px; border:1px solid var(--border); border-radius:999px; color:var(--muted)}
+  .nav{display:flex; flex-direction:column; gap:6px; margin-top:4px}
+  .nav a{padding:10px 12px; border-radius:10px; border:1px solid transparent}
+  .nav a.active{background:rgba(124,58,237,.15); border-color:#3b246a}
+  .muted{color:var(--muted)}
+  .divider{height:1px; background:var(--border); margin:8px 0}
+  .subjects{display:flex; flex-direction:column; gap:6px; overflow:auto; padding-right:4px}
+  .chip{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px; background:var(--chip); border:1px solid var(--border); cursor:pointer; white-space:nowrap}
+  .chip.active{outline:2px solid var(--accent)}
+  .row{display:flex; align-items:center; gap:8px}
+  .row-nowrap{display:flex; align-items:center; gap:8px; flex-wrap:nowrap}
+  .col{display:flex; flex-direction:column; gap:8px}
+  .input, .search, .field, select{
+    border:1px solid var(--border); background:var(--bg2); color:var(--text); border-radius:12px; padding:10px 12px; outline:none; width:100%;
+  }
+  .inline-field{ width:auto !important; min-width:80px; }
+  .button{
+    border:1px solid var(--border); background:linear-gradient(180deg, #1f1147, #160c36);
+    border-color:#261a57; cursor:pointer; user-select:none;
+    display:inline-flex; align-items:center; justify-content:center; width:auto; white-space:nowrap; color:var(--text);
+  }
+  .button:hover{filter:brightness(1.05)}
+  .button.small{padding:8px 12px; border-radius:10px}
+  .button.ghost{background:transparent; border-color:var(--border); color:var(--text)}
+  .button.danger{background:linear-gradient(180deg,#3d0d12,#28090c); border-color:#5f141a; color:#fecaca}
+  .topbar{display:flex; gap:8px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border); background:rgba(2,6,23,.05); backdrop-filter: blur(6px)}
+  .topbar .search{max-width:360px}
+  .main{display:flex; flex-direction:column; height:100%}
+  .content{padding:16px; overflow:auto; height:100%}
+  .card{background:rgba(17,24,39,.06); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 10px 30px var(--shadow)}
+  h1{font-size:20px; margin:0 0 6px 0}
+  h2{font-size:18px; margin:0 0 6px 0}
+  label{color:var(--text)}
+  .grid{display:grid; gap:12px}
+  .grid-2{grid-template-columns: 1fr 1fr}
+  .grid-3{grid-template-columns: repeat(3, 1fr)}
+  .grid-4{grid-template-columns: repeat(4, 1fr)}
+  .menu-btn{display:none}
+  .subject-add-box{ max-width: 140px; }
+  
+  /* Fix: Hide scrollbars */
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+  * {
+    scrollbar-width: none; /* Firefox */
+  }
+
+  @media (max-width: 1000px){
+    .app{grid-template-columns:1fr}
+    .sidebar{position:fixed; inset:0 0 auto 0; height:65vh; transform:translateY(-110%); transition:transform .2s; z-index:40}
+    .sidebar.open{transform:translateY(0)}
+    .grid-2 { grid-template-columns: 1fr; }
+    .menu-btn{display:block}
+  }
+
+  .empty{padding:18px; border:1px dashed var(--border); border-radius:12px; color:var(--muted); background:rgba(2,6,23,.03)}
+  details{border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--bg2)}
+  summary{cursor:pointer; font-weight:600}
+  textarea{
+    min-height:120px;
+    resize:vertical;
+    overflow: hidden; /* Fix: Hide scrollbar for auto-expanding textareas */
+  }
+  .srb-box{white-space:pre-wrap; background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:12px; min-height:220px; overflow-wrap: break-word; overflow-y: auto;}
+  .toolbar{display:flex; gap:8px; justify-content:flex-end; margin-top:10px; flex-wrap:wrap}
+  .tag{font-size:12px; padding:2px 8px; border:1px solid var(--border); border-radius:999px}
+  .table{width:100%; border-collapse: collapse}
+  .table th,.table td{padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top}
+  .toast{position:fixed; right:18px; bottom:18px; padding:12px 14px; border-radius:12px; background:rgba(16,185,129,.15); color:#d1fae5; border:1px solid rgba(16,185,129,.35); backdrop-filter: blur(6px); display:none; z-index:50}
+  .toast.error{background:rgba(239,68,68,.1); color:#fecaca; border-color:rgba(239,68,68,.35)}
+  .kbd{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; background:var(--bg2); border:1px solid var(--border); padding:2px 6px; border-radius:6px; color:var(--text)}
+  .timer{font-variant-numeric: tabular-nums; font-weight:700}
+  .bar{height:10px; border-radius:999px; border:1px solid var(--border); background:rgba(2,6,23,.25); overflow:hidden}
+  .bar > span{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--accent2),var(--accent)); transition: width .2s linear}
+  .timer-danger{color:#fecaca}
+  .hscroll{display:flex; gap:8px; overflow:auto; padding-bottom:4px}
+  ::placeholder{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 7a3 3 0 0 1 3-3h5l2 2h2a4 4 0 0 1 4 4v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7z" stroke="url(#g)" stroke-width="1.5"/><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#22d3ee"/><stop offset=".9" stop-color="#7c3aed"/></linearGradient></defs></svg>
+      생기부 면접 준비 <span class="pill">로컬·다크</span>
+    </div>
+    <nav class="nav" id="mainNav">
+      <a href="#/dashboard" data-route>🏠 대시보드</a>
+      <a href="#/subjects" data-route>📚 교과 목록</a>
+      <a href="#/practice" data-route>🎤 연습 모드</a>
+      <a href="#/analyze" data-route>✏️ 생기부 분석</a>
+      <a href="#/settings" data-route>⚙️ 설정</a>
+    </nav>
+    <div class="divider"></div>
+    <div class="row">
+      <input id="newSubjectInput" class="input subject-add-box" placeholder="새 교과명" />
+      <button class="button small" id="addSubjectBtn">➕ 추가</button>
+    </div>
+    <div class="divider"></div>
+    <div class="muted">교과 바로가기</div>
+    <div class="subjects" id="subjectQuickList"></div>
+    <div class="divider"></div>
+    <div class="muted">단축키: <span class="kbd">/</span> 검색, <span class="kbd">N</span> 새 교과, <span class="kbd">Space</span> 다음, <span class="kbd">S</span> 즐겨찾기</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="button small menu-btn" id="toggleMenu">☰ 메뉴</button>
+      <input id="searchInput" class="search" placeholder="교과 검색: 이름 일부 입력 후 Enter" />
+      <button class="button small" id="searchBtn">🔎 검색</button>
+      <span class="muted" id="searchHint"></span>
+    </div>
+    <div class="content" id="view"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const LS_KEY = "interviewPrep.SPA.v6.darkOnly.hintInline";
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+  const app = {
+    state: {
+      subjects: [],
+      sessions: [],
+      prefs: {},
+      selectedSubjectId: null
+    },
+    init(){
+      const saved = localStorage.getItem(LS_KEY);
+      if(saved){ try{ this.state = JSON.parse(saved) }catch(e){} }
+      if(!this.state.subjects || this.state.subjects.length===0){
+        this.state.subjects = [
+          { id: uid(), name:"미적분", srb:"벚꽃 개화 예측 탐구: 기온 주기함수 T(t) 모델링, 미분으로 전환점 탐색, 정적분으로 누적 저온/고온량 산출, 임계 도달 시점 근사.", questions:[
+            { id: uid(), text:"벚꽃 개화 시기의 불확실성 문제는?", answer:"", hint:"기온 변동성·이상고온/한파로 누적 냉·온량에 잡음 → 예측 오차↑", starred:false, source:"manual", createdAt:now(), updatedAt:now() }
+          ], createdAt: now(), updatedAt: now() },
+          { id: uid(), name:"고급 생명과학", srb:"홀리 바질 광주기성 탐구: 야간 2/4/6h 광조사, 6h에서 개화 지연·엽수 증가(1.6배). 광주기 조절로 상품성 개선 가능성 분석.", questions:[
+            { id: uid(), text:"플로리젠이 뭐야?", answer:"", hint:"잎에서 만들어져 정아로 이동하는 개화 신호(FT 복합체)", starred:false, source:"manual", createdAt:now(), updatedAt:now() }
+          ], createdAt: now(), updatedAt: now() }
+        ];
+        this.state.selectedSubjectId = this.state.subjects[0].id;
+      } else {
+        // migrate: ensure each question has hint
+        this.state.subjects.forEach(s=> (s.questions||[]).forEach(q=>{ if(typeof q.hint!=="string") q.hint=""; }));
+      }
+      if(!this.state.sessions) this.state.sessions = [];
+      if(!this.state.prefs) this.state.prefs = {};
+
+      this.cacheEls();
+      this.bind();
+      this.renderSidebar();
+      this.route();
+    },
+    cacheEls(){
+      this.sidebar = $("#sidebar");
+      this.subjectQuickList = $("#subjectQuickList");
+      this.newSubjectInput = $("#newSubjectInput");
+      this.addSubjectBtn = $("#addSubjectBtn");
+      this.searchInput = $("#searchInput");
+      this.searchBtn = $("#searchBtn");
+      this.searchHint = $("#searchHint");
+      this.view = $("#view");
+      this.toggleMenu = $("#toggleMenu");
+      this.app = $("#app");
+      this.mainNav = $("#mainNav");
+    },
+    bind(){
+      window.addEventListener("hashchange", ()=> this.route());
+      this.addSubjectBtn.addEventListener("click", ()=> this.addSubject());
+      this.newSubjectInput.addEventListener("keydown", e=>{ if(e.key==="Enter") this.addSubject(); });
+      this.searchBtn.addEventListener("click", ()=> this.searchGo());
+      this.searchInput.addEventListener("keydown", e=>{ if(e.key==="Enter") this.searchGo(); });
+
+      document.addEventListener("keydown", (e)=>{
+        if(e.key==="/"){ e.preventDefault(); this.searchInput.focus(); }
+        if(e.key.toLowerCase()==="n"){ this.newSubjectInput.focus(); }
+        if(e.key==="Escape"){ this.sidebar.classList.remove("open"); this.app.classList.remove("collapsed"); }
+      });
+      this.toggleMenu.addEventListener("click", ()=> {
+        if(window.innerWidth <= 1000){
+          this.sidebar.classList.toggle("open");
+        } else {
+          this.app.classList.toggle("collapsed");
+        }
+      });
+      // Fix: Close sidebar when a main nav item is clicked on mobile
+      this.mainNav.addEventListener("click", (e) => {
+          if (e.target.tagName === 'A' && window.innerWidth <= 1000) {
+              this.sidebar.classList.remove("open");
+          }
+      });
+    },
+    save(){ localStorage.setItem(LS_KEY, JSON.stringify(this.state)); },
+    toast(msg, err=false){
+      const t = $("#toast"); t.textContent = msg; t.classList.toggle("error", !!err);
+      t.style.display="block"; setTimeout(()=> t.style.display="none", 1600);
+    },
+    uidForName(name){ const s=this.state.subjects.find(x=>x.name.toLowerCase()===name.toLowerCase()); return s?.id||null; },
+    addSubject(nameFromArg){
+      const name = (nameFromArg ?? this.newSubjectInput.value).trim();
+      if(!name){ this.toast("교과명을 입력하세요", true); return; }
+      if(this.uidForName(name)){ this.toast("이미 있는 교과입니다", true); return; }
+      const sub = { id: uid(), name, srb:"", questions:[], createdAt: now(), updatedAt: now() };
+      this.state.subjects.push(sub);
+      this.state.selectedSubjectId = sub.id;
+      this.newSubjectInput.value="";
+      this.save(); this.renderSidebar();
+      location.hash = "#/subjects/" + sub.id;
+    },
+    deleteSubject(id){
+      const idx = this.state.subjects.findIndex(s=>s.id===id);
+      if(idx<0) return;
+      if(!confirm("정말 삭제할까요? 이 교과의 질문도 함께 삭제됩니다.")) return;
+      this.state.subjects.splice(idx,1);
+      if(this.state.selectedSubjectId===id) this.state.selectedSubjectId = this.state.subjects[0]?.id || null;
+      this.save(); 
+      this.renderSidebar(); 
+      // Fix: Call viewSubjects() directly to ensure immediate re-render
+      this.viewSubjects();
+      location.hash = "#/subjects";
+      this.toast("삭제되었습니다");
+    },
+    renameSubject(id){
+      const s = this.state.subjects.find(x=>x.id===id); if(!s) return;
+      const name = prompt("새 교과명", s.name); if(!name) return;
+      if(this.uidForName(name) && this.uidForName(name)!==id){ this.toast("동일 이름이 이미 있습니다", true); return; }
+      s.name = name.trim(); s.updatedAt = now(); this.save(); this.renderSidebar(); this.route(); this.toast("이름 변경됨");
+    },
+    searchGo(){
+      const q = this.searchInput.value.trim().toLowerCase();
+      if(!q){ this.toast("검색어를 입력하세요", true); return; }
+      const matches = this.state.subjects.filter(s=> s.name.toLowerCase().includes(q));
+      if(matches.length===0){ this.searchHint.textContent = "검색 결과 없음"; this.toast("검색 결과 없음", true); return; }
+      this.searchHint.textContent = `일치: ${matches.map(m=>m.name).join(", ")}`;
+      location.hash = "#/subjects/" + matches[0].id;
+    },
+    renderSidebar(){
+      $$("#mainNav a[data-route]").forEach(a=> a.classList.toggle("active", location.hash.startsWith(a.getAttribute("href"))));
+      this.subjectQuickList.innerHTML = "";
+      if(this.state.subjects.length===0){
+        this.subjectQuickList.innerHTML = `<div class="empty">교과가 없습니다</div>`;
+      }else{
+        this.state.subjects.forEach(s=>{
+          const btn = document.createElement("a");
+          btn.href = "#/subjects/" + s.id;
+          btn.className = "chip" + (this.state.selectedSubjectId===s.id ? " active" : "");
+          btn.innerHTML = `<span>${s.name}</span>`;
+          this.subjectQuickList.appendChild(btn);
+        });
+      }
+    },
+    route(){
+      const hash = location.hash || "#/dashboard";
+      this.renderSidebar();
+      const [_, route, id] = hash.split("/");
+      switch(route){
+        case "dashboard": return this.viewDashboard();
+        case "subjects": return id ? this.viewSubject(id) : this.viewSubjects();
+        case "practice": return this.viewPractice();
+        case "analyze": return this.viewAnalyze();
+        case "settings": return this.viewSettings();
+        default: location.hash = "#/dashboard";
+      }
+    },
+
+    /* ---------- Views ---------- */
+    viewDashboard(){
+      const recent = [...this.state.subjects].sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0)).slice(0,5);
+      const unanswered = this.state.subjects.reduce((acc,s)=> acc + s.questions.filter(q=>!q.answer).length ,0);
+      const totalQ = this.state.subjects.reduce((acc,s)=> acc + s.questions.length ,0);
+      this.view.innerHTML = `
+        <div class="grid grid-3">
+          <div class="card">
+            <h1>오늘 할 일</h1>
+            <div class="row">
+              <a class="button small" href="#/practice">연습 시작</a>
+              <a class="button ghost small" href="#/subjects">교과 관리</a>
+            </div>
+          </div>
+          <div class="card">
+            <h2>요약</h2>
+            <table class="table">
+              <tr><th>교과 수</th><td>${this.state.subjects.length}</td></tr>
+              <tr><th>질문 수</th><td>${totalQ}</td></tr>
+              <tr><th>미답변 질문</th><td>${unanswered}</td></tr>
+            </table>
+          </div>
+          <div class="card" style="grid-column: 1 / -1">
+            <h2>최근 편집한 교과</h2>
+            ${ recent.length ? `<div class="hscroll">${recent.map(s=>`<a class="chip" href="#/subjects/${s.id}">${s.name}</a>`).join("")}</div>` : `<div class="empty">최근 편집 없음</div>` }
+          </div>
+        </div>
+      `;
+    },
+
+    viewSubjects(){
+      const list = [...this.state.subjects].sort((a,b)=> a.name.localeCompare(b.name,"ko"));
+      this.view.innerHTML = `
+        <div class="card">
+          <h1>교과 목록</h1>
+          ${ list.length ? `
+            <table class="table">
+              <thead><tr><th>교과명</th><th>질문</th><th>최근 수정</th><th></th></tr></thead>
+              <tbody>
+                ${list.map(s=>`
+                  <tr>
+                    <td><a href="#/subjects/${s.id}">${s.name}</a></td>
+                    <td>${s.questions.length}</td>
+                    <td>${fmtTime(s.updatedAt)}</td>
+                    <td class="row-nowrap">
+                      <button class="button ghost small" data-rename="${s.id}">이름 변경</button>
+                      <button class="button danger small" data-del="${s.id}">삭제</button>
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          ` : `<div class="empty">교과가 없습니다. 좌측에서 추가하세요.</div>`}
+        </div>
+      `;
+      $$("[data-rename]").forEach(btn=> btn.addEventListener("click", ()=> this.renameSubject(btn.dataset.rename)));
+      $$("[data-del]").forEach(btn=> btn.addEventListener("click", ()=> this.deleteSubject(btn.dataset.del)));
+    },
+
+    viewSubject(id){
+      const s = this.state.subjects.find(x=>x.id===id);
+      if(!s){ this.view.innerHTML = `<div class="empty">해당 교과가 없습니다.</div>`; return; }
+      this.state.selectedSubjectId = id; this.save(); this.renderSidebar();
+      const unanswered = s.questions.filter(q=>!q.answer).length;
+      this.view.innerHTML = `
+        <div class="grid">
+          <div class="card">
+            <h1>${s.name}</h1>
+            <div class="row-nowrap">
+              <button class="button ghost small" id="renameBtn">이름 변경</button>
+              <button class="button danger small" id="deleteBtn">교과 삭제</button>
+              <span class="muted" style="margin-left:auto">미답변 ${unanswered} / 총 ${s.questions.length}</span>
+            </div>
+            <div class="divider"></div>
+            <div class="muted">교과 생기부</div>
+            <div id="srbView" class="srb-box" title="더블클릭 편집">${esc(s.srb || "생기부 텍스트 없음 (더블클릭 또는 편집으로 입력)")}</div>
+            <div id="srbEdit" style="display:none">
+              <textarea id="srbTextarea" class="field" placeholder="이 교과의 생기부를 붙여넣거나 작성하세요.">${escAttr(s.srb||"")}</textarea>
+              <div class="toolbar">
+                <button class="button small">저장</button>
+                <button class="button ghost small">취소</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <button class="button small" id="editSrbBtn">편집</button>
+              <a class="button small" href="#/analyze?id=${s.id}">생기부 분석</a>
+              <button class="button ghost small" id="clearSrbBtn">지우기</button>
+            </div>
+          </div>
+          <div class="card">
+            <h2>질문 리스트</h2>
+            <div class="card" style="margin-bottom:12px; border:1px dashed var(--border); background:rgba(17,24,39,.03); padding:12px">
+              <div class="row-nowrap">
+                <input id="newQ" class="field" placeholder="새로운 질문을 입력하세요">
+                <button class="button small" id="addQBtn">➕ 추가</button>
+              </div>
+            </div>
+            ${ s.questions.length ? "" : `<div class="empty">질문이 없습니다.</div>` }
+            <div id="qList"></div>
+          </div>
+        </div>
+      `;
+      // SRB edit
+      $("#editSrbBtn").addEventListener("click", ()=>{ $("#srbView").style.display="none"; $("#srbEdit").style.display="block"; $("#srbTextarea").focus(); });
+      $("#srbView").addEventListener("dblclick", ()=> $("#editSrbBtn").click());
+      const srbBtns = $$("#srbEdit .button");
+      srbBtns[0].addEventListener("click", ()=>{
+        const t = $("#srbTextarea").value.trim(); s.srb = t; s.updatedAt = now(); this.save(); this.toast("생기부 저장됨"); this.viewSubject(id);
+      });
+      srbBtns[1].addEventListener("click", ()=>{ $("#srbEdit").style.display="none"; $("#srbView").style.display="block"; });
+      $("#clearSrbBtn").addEventListener("click", ()=>{ if(confirm("생기부를 비울까요?")){ s.srb=""; s.updatedAt=now(); this.save(); this.viewSubject(id);} });
+      $("#renameBtn").addEventListener("click", ()=> this.renameSubject(id));
+      $("#deleteBtn").addEventListener("click", ()=> this.deleteSubject(id));
+
+      // manual questions
+      $("#newQ").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#addQBtn").click(); });
+      $("#addQBtn").addEventListener("click", ()=>{
+        const text = $("#newQ").value.trim(); if(!text){ this.toast("질문을 입력하세요", true); return; }
+        s.questions.push({ id:uid(), text, answer:"", hint:"", starred:false, source:"manual", createdAt:now(), updatedAt:now() });
+        s.updatedAt = now(); this.save(); this.viewSubject(id); this.toast("질문 추가됨");
+      });
+
+      // render questions
+      const qList = $("#qList");
+      s.questions.forEach(q=>{
+        if(typeof q.hint!=="string") q.hint="";
+        const node = document.createElement("details");
+        node.open = false;
+        node.innerHTML = `
+          <summary class="row-nowrap">
+            <span>${esc(q.text)}</span>
+            <span class="tag">수동</span>
+            <span style="margin-left:auto" class="row-nowrap">
+              <button class="button ghost small" data-star="${q.id}">${q.starred?"★":"☆"}</button>
+              <button class="button ghost small" data-del="${q.id}">삭제</button>
+            </span>
+          </summary>
+          <div class="col" style="margin-top:8px">
+            <label>힌트</label>
+            <textarea class="field" data-hint="${q.id}" placeholder="키워드/구조/답변 뼈대 등 힌트를 적어두세요.">${escAttr(q.hint||"")}</textarea>
+            <label>답변</label>
+            <textarea class="field" data-ans="${q.id}" placeholder="여기에 답변을 정리하세요.">${escAttr(q.answer||"")}</textarea>
+            <div class="toolbar">
+              <button class="button small" data-save="${q.id}">저장</button>
+            </div>
+          </div>
+        `;
+        qList.appendChild(node);
+      });
+      $$("[data-save]").forEach(btn=> btn.addEventListener("click", ()=>{
+        const idq = btn.dataset.save;
+        const q = s.questions.find(x=>x.id===idq);
+        q.hint = $(`[data-hint="${idq}"]`).value.trim();
+        q.answer = $(`[data-ans="${idq}"]`).value.trim();
+        q.updatedAt = now(); s.updatedAt = now();
+        this.save(); this.toast("저장됨");
+      }));
+      $$("[data-del]").forEach(btn=> btn.addEventListener("click", ()=>{
+        const idq = btn.dataset.del;
+        if(!confirm("삭제할까요?")) return;
+        s.questions = s.questions.filter(x=> x.id!==idq);
+        s.updatedAt = now(); this.save(); this.viewSubject(id);
+      }));
+      $$("[data-star]").forEach(btn=> btn.addEventListener("click", ()=>{
+        const idq = btn.dataset.star;
+        const q = s.questions.find(x=>x.id===idq);
+        q.starred = !q.starred; q.updatedAt = now(); s.updatedAt=now();
+        this.save(); btn.textContent = q.starred ? "★" : "☆";
+      }));
+      this.autoExpandAllTextareas();
+    },
+
+    viewAnalyze(){
+      const hash = new URLSearchParams(location.hash.slice(location.hash.indexOf('?')));
+      const subId = hash.get('id');
+      const s = subId ? this.state.subjects.find(x=>x.id===subId) : null;
+      
+      this.view.innerHTML = `
+        <div class="grid grid-2">
+          <div class="card">
+            <h1>생기부 분석</h1>
+            <div class="divider"></div>
+            <div class="col">
+              <label>교과 선택</label>
+              <select class="field" id="subjectSelector">
+                <option value="">- 직접 입력 -</option>
+                ${this.state.subjects.map(sub => `<option value="${sub.id}" ${sub.id === subId ? 'selected' : ''}>${esc(sub.name)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="col" style="margin-top:12px">
+              <label>생기부 텍스트</label>
+              <textarea id="srbTextarea" class="field" placeholder="여기에 생기부 내용을 붙여넣으세요." style="min-height: 200px">${escAttr(s?.srb || '')}</textarea>
+            </div>
+          </div>
+          <div class="card">
+            <h2>수동 분석</h2>
+            <div class="col">
+              <label>흐름 정리</label>
+              <textarea id="flowTextarea" class="field" placeholder="면접관에게 전달할 답변의 전체적인 흐름을 정리하세요."></textarea>
+            </div>
+            <div class="col">
+              <label>키워드 정리</label>
+              <textarea id="keywordsTextarea" class="field" placeholder="핵심 단어와 개념을 정리하세요."></textarea>
+            </div>
+            <div class="col">
+              <label>핵심 문장 정리</label>
+              <textarea id="keySentencesTextarea" class="field" placeholder="가장 중요한 답변 문장을 정리하세요."></textarea>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const subjectSelector = $("#subjectSelector");
+      const srbTextarea = $("#srbTextarea");
+
+      subjectSelector.addEventListener('change', (e) => {
+        const selectedId = e.target.value;
+        const selectedSub = this.state.subjects.find(sub => sub.id === selectedId);
+        srbTextarea.value = selectedSub?.srb || '';
+      });
+      this.autoExpandAllTextareas();
+    },
+
+    viewPractice(){
+      const subs = this.state.subjects;
+      this.view.innerHTML = `
+        <div class="grid">
+          <div class="card">
+            <h1>연습 설정</h1>
+            <div class="muted">연습할 교과, 질문 개수, 문항당 제한시간을 선택하세요.</div>
+            <div class="divider"></div>
+            <div class="grid grid-3" id="subChecks">
+              ${ subs.map(s=>`
+                <label class="chip"><input type="checkbox" data-sub="${s.id}" checked> ${esc(s.name)} <span class="muted">(${s.questions.length})</span></label>
+              `).join("")}
+            </div>
+            <div class="col" style="margin-top: 16px;">
+              <div class="row" style="align-items: center; gap: 8px; flex-wrap: wrap;">
+                <label>질문 개수</label>
+                <input id="pCount" class="field inline-field" style="max-width:100px" value="10">
+                <label>문항당 제한(초)</label>
+                <select id="pTimer" class="field inline-field" style="max-width:140px">
+                  <option value="0">무제한</option>
+                  <option value="30">30초</option>
+                  <option value="60" selected>60초</option>
+                  <option value="90">90초</option>
+                </select>
+                <input id="pTimerCustom" class="field inline-field" style="max-width:120px" placeholder="직접 입력(초)">
+                <button class="button small" id="startPractice">연습 시작</button>
+              </div>
+            </div>
+          </div>
+          <div class="card" id="practiceArea" style="grid-column: 1 / -1; display:none"></div>
+        </div>
+      `;
+      $("#startPractice").addEventListener("click", ()=>{
+        const selectedIds = $$("#subChecks input[type=checkbox]:checked").map(cb=>cb.dataset.sub);
+        const count = Math.max(1, parseInt($("#pCount").value,10) || 10);
+        let limit = parseInt($("#pTimer").value,10) || 0;
+        const custom = parseInt(($("#pTimerCustom").value||"").trim(),10);
+        if(!isNaN(custom) && custom>=0) limit = custom;
+        const pool = this.collectQuestions(selectedIds);
+        if(pool.length===0){ this.toast("선택 교과에 질문이 없습니다", true); return; }
+        const qs = shuffle(pool).slice(0, Math.min(count, pool.length));
+        this.runPractice(qs, limit);
+      });
+    },
+
+    viewSettings(){
+      this.view.innerHTML = `
+        <div class="grid grid-2">
+          <div class="card">
+            <h1>설정</h1>
+            <h2>데이터</h2>
+            <div class="row-nowrap">
+              <button class="button small" id="backupBtn">💾 백업</button>
+              <button class="button ghost small" id="restoreBtn">📂 복원</button>
+              <input type="file" id="restoreFile" accept="application/json" style="display:none">
+            </div>
+            <div class="divider"></div>
+            <h2>안내</h2>
+            <div class="muted">수동 질문 + 힌트 관리, 타이머 포함 연습 모드만 제공합니다.</div>
+          </div>
+        </div>
+      `;
+      $("#backupBtn").addEventListener("click", ()=>{
+        const blob = new Blob([JSON.stringify(this.state, null, 2)], {type:"application/json"});
+        const url = URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="interview_prep_backup.json"; a.click(); URL.revokeObjectURL(url);
+        this.toast("백업 완료");
+      });
+      $("#restoreBtn").addEventListener("click", ()=> $("#restoreFile").click());
+      $("#restoreFile").addEventListener("change", async (e)=>{
+        const f = e.target.files[0]; if(!f) return;
+        try{
+          const txt = await f.text(); const data = JSON.parse(txt);
+          if(!data || !Array.isArray(data.subjects)) throw new Error("형식 오류");
+          if(!confirm("현재 데이터를 백업으로 교체합니다. 진행할까요?")) return;
+          this.state = data; this.save(); location.reload();
+        }catch(err){ this.toast("복원 실패: "+(err.message||"오류"), true); }
+      });
+    },
+
+    /* ---------- Practice engine (uses hint in UI) ---------- */
+    collectQuestions(subjectIds){
+      const set = new Set(subjectIds);
+      const qs = [];
+      this.state.subjects.forEach(s=>{ if(set.has(s.id)) qs.push(...s.questions); });
+      return qs;
+    },
+    runPractice(qs, perSec){
+      const area = $("#practiceArea"); area.style.display="block";
+      const hasTimer = perSec > 0;
+      let idx = 0, done=false;
+      let questionStart = null;
+      let remaining = perSec;
+      let paused = false;
+      let pauseStartedAt = 0;
+      let accPaused = 0;
+      let timerId = null;
+      const sessionStart = Date.now();
+
+      const next = (auto=false) => {
+        if(idx < qs.length-1){
+          idx++;
+          resetTimer();
+          render();
+          if(auto) app.toast("시간 종료 · 다음 문항");
+        }else{
+          finish();
+        }
+      };
+
+      const resetTimer = () => {
+        if(hasTimer){
+          remaining = perSec;
+          questionStart = Date.now();
+          paused = false;
+          pauseStartedAt = 0;
+          accPaused = 0;
+          schedule();
+        }
+      };
+
+      const schedule = () => {
+        if(timerId) clearInterval(timerId);
+        if(!hasTimer) return;
+        timerId = setInterval(tick, 100);
+      };
+
+      const tick = () => {
+        if(!hasTimer || paused) return;
+        const nowt = Date.now();
+        const elapsed = (nowt - questionStart - accPaused) / 1000;
+        const left = Math.max(0, perSec - elapsed);
+        remaining = left;
+        updateTimerUI();
+        if(left <= 0){
+          clearInterval(timerId);
+          setTimeout(()=> next(true), 50);
+        }
+      };
+
+      const togglePause = () => {
+        if(!hasTimer) return;
+        if(!paused){
+          paused = true;
+          pauseStartedAt = Date.now();
+          updateTimerUI();
+        }else{
+          paused = false;
+          accPaused += (Date.now() - pauseStartedAt);
+          updateTimerUI();
+        }
+      };
+
+      const restartQuestion = () => {
+        if(!hasTimer) return;
+        questionStart = Date.now();
+        accPaused = 0; paused = false; remaining = perSec;
+        schedule(); updateTimerUI();
+      };
+
+      const finish = () => {
+        done = true; if(timerId) clearInterval(timerId);
+        const elapsedSec = Math.round((Date.now() - sessionStart)/1000);
+        const stars = qs.filter(q=> bookmarked.has(q.id));
+        area.innerHTML = `
+          <div class="card">
+            <h2>연습 종료</h2>
+            <p>총 ${qs.length}문항 · 즐겨찾기 ${stars.length}문항 · 총 소요 ${fmtSec(elapsedSec)}</p>
+            ${ stars.length ? `<div class="col">${stars.map(q=>`<div class="chip">★ ${esc(q.text)}</div>`).join("")}</div>` : `<div class="empty">즐겨찾기 없음</div>` }
+            <div class="toolbar">
+              <a class="button small" href="#/practice">다시 설정</a>
+              <a class="button ghost small" href="#/subjects/${this.state.selectedSubjectId || this.state.subjects[0]?.id || ""}">교과로 이동</a>
+            </div>
+          </div>
+        `;
+      };
+
+      const bookmarked = new Set();
+
+      const updateTimerUI = () => {
+        const timerEl = $("#timerText");
+        const bar = $("#timerBarFill");
+        const pauseBtn = $("#pauseBtn");
+        if(!hasTimer || !timerEl || !bar) return;
+        const secs = Math.ceil(remaining);
+        timerEl.textContent = fmtSec(secs);
+        bar.style.width = `${Math.max(0, Math.min(100, ((perSec - remaining)/perSec)*100))}%`;
+        timerEl.classList.toggle("timer-danger", secs<=5 && !paused);
+        if(pauseBtn) pauseBtn.textContent = paused ? "▶ 재개" : "⏸ 일시정지";
+        const ses = $("#sessionElapsed"); if(ses){ const e=Math.round((Date.now()-sessionStart)/1000); ses.textContent = fmtSec(e); }
+      };
+
+      const render = () => {
+        const q = qs[idx];
+        if(typeof q.hint!=="string") q.hint="";
+        const sesElapsed = Math.round((Date.now() - sessionStart)/1000);
+        const hintText = (q.hint && q.hint.trim()) ? q.hint : (q.answer || "");
+        area.innerHTML = `
+          <div class="row-nowrap" style="justify-content:space-between; gap:10px">
+            <div>문항 ${idx+1}/${qs.length}${hasTimer ? ` · 남은시간 <span class="timer" id="timerText"></span>` : ""}</div>
+            <div class="muted">세션 경과: <span class="timer" id="sessionElapsed">${fmtSec(sesElapsed)}</span></div>
+            <div class="row-nowrap">
+              ${ hasTimer ? `<button class="button ghost small" id="pauseBtn">⏸ 일시정지</button>
+              <button class="button ghost small" id="restartBtn">↺ 리셋</button>` : "" }
+              <button class="button ghost small" id="starBtn">${bookmarked.has(q.id)?"★ 즐겨찾기":"☆ 즐겨찾기"}</button>
+              <button class="button small" id="nextBtn">${idx<qs.length-1?"다음":"종료"}</button>
+            </div>
+          </div>
+          ${ hasTimer ? `<div class="bar" style="margin-top:8px"><span id="timerBarFill"></span></div>` : "" }
+          <div class="card" style="margin-top:10px">
+            <h2>${esc(q.text)}</h2>
+            <div class="muted">힌트: ${esc((hintText||"").slice(0, 160))}${(hintText&&hintText.length>160)?"...":""}</div>
+          </div>
+        `;
+        $("#nextBtn").addEventListener("click", ()=> next(false));
+        $("#starBtn").addEventListener("click", ()=>{
+          if(bookmarked.has(q.id)) bookmarked.delete(q.id); else bookmarked.add(q.id);
+          render();
+        });
+        if(hasTimer){
+          $("#pauseBtn").addEventListener("click", togglePause);
+          $("#restartBtn").addEventListener("click", restartQuestion);
+        }
+        updateTimerUI();
+      };
+
+      if(hasTimer){ resetTimer(); } else { questionStart = Date.now(); }
+      render();
+
+      document.onkeydown = (e)=>{
+        if(done) return;
+        if(e.code==="Space"){ e.preventDefault(); next(false); }
+        if(e.key.toLowerCase()==="s"){ const q = qs[idx]; if(bookmarked.has(q.id)) bookmarked.delete(q.id); else bookmarked.add(q.id); render(); }
+        if(hasTimer && e.key.toLowerCase()==="p"){ togglePause(); } // 'p' for pause
+        if(hasTimer && e.key.toLowerCase()==="r"){ restartQuestion(); }
+      };
+    },
+    
+    // Fix: Auto-resize all relevant textareas
+    autoExpandTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    },
+
+    autoExpandAllTextareas() {
+      const textareas = $$('textarea.field');
+      textareas.forEach(el => {
+        el.addEventListener('input', () => this.autoExpandTextarea(el));
+        this.autoExpandTextarea(el); // Initial resize on load
+      });
+    }
+  };
+
+  // helpers
+  function uid(){ return "id_"+Math.random().toString(36).slice(2)+Date.now().toString(36); }
+  function now(){ return Date.now(); }
+  function fmtTime(t){ if(!t) return "-"; const d=new Date(t); return d.toLocaleString(); }
+  function fmtSec(s){ s = Math.max(0, Math.floor(s)); const m = Math.floor(s/60), r = s%60; return `${String(m).padStart(2,"0")}:${String(r).padStart(2,"0")}`; }
+  function esc(s){ return String(s||"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;","&gt;":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+  function escAttr(s){ return esc(s).replace(/"/g,"&quot;"); }
+  function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  app.init();
+})();</script>
+</body>
+</html>
