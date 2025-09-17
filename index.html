@@ -63,7 +63,7 @@
   h2{font-size:18px; margin:0 0 6px 0}
   label{color:var(--text)}
   .grid{display:grid; gap:12px}
-  .grid-2{grid-template-columns: 1fr 1fr}
+  .grid-2{grid-template-columns: minmax(370px, 1fr) 1fr} /* Added minmax to make the first column wider */
   .grid-3{grid-template-columns: repeat(3, 1fr)}
   .grid-4{grid-template-columns: repeat(4, 1fr)}
   .menu-btn{display:none}
@@ -96,7 +96,7 @@
   details{border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--bg2)}
   summary{cursor:pointer; font-weight:600}
   textarea{
-    min-height:120px;
+    min-height:250px; /* Increased height as requested in previous response */
     resize:vertical;
     overflow: hidden;
   }
@@ -363,7 +363,7 @@
       this.state.selectedSubjectId = id; this.save(); this.renderSidebar();
       const unanswered = s.questions.filter(q=>!q.answer).length;
       this.view.innerHTML = `
-        <div class="grid">
+        <div class="grid grid-2">
           <div class="card">
             <h1>${s.name}</h1>
             <div class="row-nowrap">
@@ -857,8 +857,8 @@
           if (char === '\n') {
               byteCount += 2;
           }
-          // Check for Korean characters (Hangul)
-          else if (char.match(/[\uAC00-\uD7A3]/)) {
+          // Check for Korean characters (Hangul), including individual jamo
+          else if (char.match(/[\uAC00-\uD7A3\u1100-\u11FF\u3131-\u318E]/)) {
               byteCount += 3;
           }
           // All other characters (English, numbers, etc.)
