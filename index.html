@@ -63,7 +63,7 @@
   h2{font-size:18px; margin:0 0 6px 0}
   label{color:var(--text)}
   .grid{display:grid; gap:12px}
-  .grid-2{grid-template-columns: minmax(370px, 1fr) 1fr} /* Added minmax to make the first column wider */
+  .grid-2{grid-template-columns: 1fr 1fr} /* Reverted to default 1fr 1fr */
   .grid-3{grid-template-columns: repeat(3, 1fr)}
   .grid-4{grid-template-columns: repeat(4, 1fr)}
   .menu-btn{display:none}
@@ -96,7 +96,7 @@
   details{border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--bg2)}
   summary{cursor:pointer; font-weight:600}
   textarea{
-    min-height:250px; /* Increased height as requested in previous response */
+    min-height:250px;
     resize:vertical;
     overflow: hidden;
   }
@@ -492,36 +492,197 @@
     },
     
     viewQuestions(){
-        const allQuestions = [];
-        this.state.subjects.forEach(s => {
-            s.questions.forEach(q => {
-                allQuestions.push({
-                    ...q,
-                    subjectName: s.name,
-                    subjectId: s.id
-                });
-            });
-        });
+        // Get the first subject or null
+        let selectedId = this.state.selectedSubjectId || this.state.subjects[0]?.id || null;
+        if(selectedId) {
+            this.state.selectedSubjectId = selectedId;
+            this.save();
+        }
+
+        const subjectsHtml = this.state.subjects.map(sub => `<option value="${sub.id}" ${sub.id === selectedId ? 'selected' : ''}>${esc(sub.name)}</option>`).join('');
+        const totalQuestions = this.state.subjects.reduce((sum, s) => sum + s.questions.length, 0);
 
         this.view.innerHTML = `
-            <div class="card">
-                <h1>예상 질문 목록</h1>
-                <p class="muted">전체 교과의 질문들을 모아 보았습니다.</p>
-                ${ allQuestions.length ? `
-                    <table class="table">
-                        <thead><tr><th>질문</th><th>교과</th></tr></thead>
-                        <tbody>
-                            ${allQuestions.map(q => `
-                                <tr>
-                                    <td><a href="#/subjects/${q.subjectId}">${esc(q.text)}</a></td>
-                                    <td>${esc(q.subjectName)}</td>
-                                </tr>
-                            `).join("")}
-                        </tbody>
-                    </table>
-                ` : `<div class="empty">아직 추가된 질문이 없습니다.</div>`}
+            <div class="grid grid-2">
+                <div class="card">
+                    <h1>예상 질문 작성</h1>
+                    <div class="divider"></div>
+                    <div class="col">
+                        <label>교과 선택</label>
+                        <select class="field" id="subjectSelector">
+                            <option value="">- 교과를 선택하세요 -</option>
+                            ${subjectsHtml}
+                        </select>
+                    </div>
+                    <div class="col" style="margin-top: 12px;">
+                        <div class="row" style="justify-content:space-between; align-items:flex-end">
+                            <label>생기부 텍스트</label>
+                            <div class="muted" id="srbByteCount"></div>
+                        </div>
+                        <textarea id="srbTextarea" class="field" placeholder="선택한 교과의 생기부가 자동으로 불러와집니다."></textarea>
+                    </div>
+                    <div class="col" style="margin-top: 12px;">
+                        <label>키워드</label>
+                        <textarea id="keywordsTextarea" class="field" placeholder="핵심 키워드를 입력하세요. (선택사항)"></textarea>
+                    </div>
+                    <div class="col" style="margin-top: 12px;">
+                        <label>예상 질문</label>
+                        <textarea id="questionTextarea" class="field" placeholder="질문을 입력하세요."></textarea>
+                    </div>
+                    <div class="toolbar">
+                        <span class="muted" id="qCount">전체 예상 질문 수: ${totalQuestions}</span>
+                        <button class="button small" id="addQuestionBtn">➕ 예상 질문 추가</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>예상 질문 목록</h2>
+                    <div class="divider"></div>
+                    <div id="qList">
+                        ${!selectedId ? `<div class="empty">좌측에서 교과를 선택하면 질문 목록이 나타납니다.</div>` : ''}
+                    </div>
+                </div>
             </div>
         `;
+        
+        const subjectSelector = $("#subjectSelector");
+        const srbTextarea = $("#srbTextarea");
+        const srbByteCount = $("#srbByteCount");
+        const qList = $("#qList");
+        const keywordsTextarea = $("#keywordsTextarea");
+        const questionTextarea = $("#questionTextarea");
+        const qCountDisplay = $("#qCount");
+        const addQuestionBtn = $("#addQuestionBtn");
+
+        const renderQuestionsList = (subjectId) => {
+            qList.innerHTML = '';
+            const s = this.state.subjects.find(sub => sub.id === subjectId);
+            if (!s || s.questions.length === 0) {
+                qList.innerHTML = `<div class="empty">이 교과에는 아직 질문이 없습니다.</div>`;
+                return;
+            }
+            s.questions.forEach(q => {
+                const node = document.createElement("details");
+                node.open = false;
+                node.innerHTML = `
+                    <summary class="row-nowrap">
+                        <span>${esc(q.text)}</span>
+                        <span class="tag"></span>
+                        <span style="margin-left:auto" class="row-nowrap">
+                            <button class="button ghost small" data-star="${q.id}">${q.starred ? "★" : "☆"}</button>
+                            <button class="button ghost small" data-del="${q.id}">삭제</button>
+                        </span>
+                    </summary>
+                    <div class="col" style="margin-top:8px">
+                        <label>힌트</label>
+                        <textarea class="field" data-hint="${q.id}" placeholder="키워드/구조/답변 뼈대 등 힌트를 적어두세요.">${escAttr(q.hint || "")}</textarea>
+                        <label>답변</label>
+                        <textarea class="field" data-ans="${q.id}" placeholder="여기에 답변을 정리하세요.">${escAttr(q.answer || "")}</textarea>
+                        <div class="toolbar">
+                            <button class="button small" data-save="${q.id}">저장</button>
+                        </div>
+                    </div>
+                `;
+                qList.appendChild(node);
+            });
+            $$("[data-save]").forEach(btn => btn.addEventListener("click", this.saveQuestionDetails));
+            $$("[data-del]").forEach(btn => btn.addEventListener("click", this.deleteQuestion));
+            $$("[data-star]").forEach(btn => btn.addEventListener("click", this.starQuestion));
+            this.autoExpandAllTextareas();
+        };
+
+        const updateSrbDisplay = () => {
+            const text = srbTextarea.value;
+            srbByteCount.textContent = `바이트: ${calculateSrbBytes(text)}`;
+        };
+
+        const handleSubjectChange = (subjectId) => {
+            const selectedSub = this.state.subjects.find(sub => sub.id === subjectId);
+            srbTextarea.value = selectedSub?.srb || '';
+            this.state.selectedSubjectId = subjectId;
+            this.save();
+            updateSrbDisplay();
+            renderQuestionsList(subjectId);
+            questionTextarea.value = '';
+            keywordsTextarea.value = '';
+            this.autoExpandAllTextareas();
+        };
+
+        subjectSelector.addEventListener('change', (e) => handleSubjectChange(e.target.value));
+        srbTextarea.addEventListener('input', () => {
+            const selectedSub = this.state.subjects.find(sub => sub.id === subjectSelector.value);
+            if(selectedSub){
+                selectedSub.srb = srbTextarea.value;
+                selectedSub.updatedAt = now();
+                this.save();
+            }
+            updateSrbDisplay();
+        });
+
+        addQuestionBtn.addEventListener('click', () => {
+            const subjectId = subjectSelector.value;
+            const questionText = questionTextarea.value.trim();
+            const keywordsText = keywordsTextarea.value.trim();
+
+            if (!subjectId) { this.toast("교과를 먼저 선택하세요.", true); return; }
+            if (!questionText) { this.toast("예상 질문을 입력하세요.", true); return; }
+
+            const s = this.state.subjects.find(sub => sub.id === subjectId);
+            if (s) {
+                s.questions.push({
+                    id: uid(),
+                    text: questionText,
+                    answer: "",
+                    hint: keywordsText,
+                    starred: false,
+                    source: "manual",
+                    createdAt: now(),
+                    updatedAt: now()
+                });
+                s.updatedAt = now();
+                this.save();
+                this.toast("질문이 추가되었습니다.");
+                renderQuestionsList(subjectId);
+                qCountDisplay.textContent = `전체 예상 질문 수: ${this.state.subjects.reduce((sum, s) => sum + s.questions.length, 0)}`;
+                questionTextarea.value = '';
+                keywordsTextarea.value = '';
+                this.autoExpandAllTextareas();
+            }
+        });
+        
+        this.saveQuestionDetails = (e) => {
+            const idq = e.target.dataset.save;
+            const selectedSubject = this.state.subjects.find(s => s.id === subjectSelector.value);
+            if (!selectedSubject) return;
+            const q = selectedSubject.questions.find(x => x.id === idq);
+            if (!q) return;
+            q.hint = $(`[data-hint="${idq}"]`).value.trim();
+            q.answer = $(`[data-ans="${idq}"]`).value.trim();
+            q.updatedAt = now(); selectedSubject.updatedAt = now();
+            this.save(); this.toast("저장됨");
+        };
+
+        this.deleteQuestion = (e) => {
+            const idq = e.target.dataset.del;
+            if(!confirm("삭제할까요?")) return;
+            const selectedSubject = this.state.subjects.find(s => s.id === subjectSelector.value);
+            if (!selectedSubject) return;
+            selectedSubject.questions = selectedSubject.questions.filter(x => x.id !== idq);
+            selectedSubject.updatedAt = now(); this.save(); renderQuestionsList(selectedSubject.id);
+        };
+
+        this.starQuestion = (e) => {
+            const idq = e.target.dataset.star;
+            const selectedSubject = this.state.subjects.find(s => s.id === subjectSelector.value);
+            if (!selectedSubject) return;
+            const q = selectedSubject.questions.find(x => x.id === idq);
+            if (!q) return;
+            q.starred = !q.starred; q.updatedAt = now(); selectedSubject.updatedAt=now();
+            this.save(); e.target.textContent = q.starred ? "★" : "☆";
+        };
+
+        if (selectedId) {
+            handleSubjectChange(selectedId);
+        }
     },
 
     viewAnalyze(){
@@ -537,7 +698,7 @@
             <div class="col">
               <label>교과 선택</label>
               <select class="field" id="subjectSelector">
-                <option value="">- 교과목을 선택해 주세요 -</option>
+                <option value="">- 직접 입력 -</option>
                 ${this.state.subjects.map(sub => `<option value="${sub.id}" ${sub.id === subId ? 'selected' : ''}>${esc(sub.name)}</option>`).join('')}
               </select>
             </div>
@@ -546,7 +707,7 @@
                 <label>생기부 텍스트</label>
                 <div class="muted" id="srbByteCount"></div>
               </div>
-              <textarea id="srbTextarea" class="field" placeholder="여기에 생기부 내용을 붙여넣으세요." style="min-height: 380px">${escAttr(s?.srb || '')}</textarea>
+              <textarea id="srbTextarea" class="field" placeholder="여기에 생기부 내용을 붙여넣으세요." style="min-height: 250px">${escAttr(s?.srb || '')}</textarea>
             </div>
           </div>
           <div class="card">
@@ -571,18 +732,28 @@
       const srbTextarea = $("#srbTextarea");
       const srbByteCount = $("#srbByteCount");
 
-      function updateSrbDisplay() {
+      const updateSrbDisplay = () => {
           const text = srbTextarea.value;
           srbByteCount.textContent = `바이트: ${calculateSrbBytes(text)}`;
-      }
+      };
 
       subjectSelector.addEventListener('change', (e) => {
         const selectedId = e.target.value;
         const selectedSub = this.state.subjects.find(sub => sub.id === selectedId);
         srbTextarea.value = selectedSub?.srb || '';
+        this.state.selectedSubjectId = selectedId;
+        this.save();
         updateSrbDisplay();
       });
-      srbTextarea.addEventListener('input', updateSrbDisplay);
+      srbTextarea.addEventListener('input', () => {
+        const selectedSub = this.state.subjects.find(sub => sub.id === subjectSelector.value);
+        if(selectedSub){
+            selectedSub.srb = srbTextarea.value;
+            selectedSub.updatedAt = now();
+            this.save();
+        }
+        updateSrbDisplay();
+      });
       updateSrbDisplay();
       this.autoExpandAllTextareas();
     },
