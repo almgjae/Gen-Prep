@@ -166,15 +166,8 @@
       const saved = localStorage.getItem(LS_KEY);
       if(saved){ try{ this.state = JSON.parse(saved) }catch(e){} }
       if(!this.state.subjects || this.state.subjects.length===0){
-        this.state.subjects = [
-          { id: uid(), name:"미적분", srb:"벚꽃 개화 예측 탐구: 기온 주기함수 T(t) 모델링, 미분으로 전환점 탐색, 정적분으로 누적 저온/고온량 산출, 임계 도달 시점 근사.", questions:[
-            { id: uid(), text:"벚꽃 개화 시기의 불확실성 문제는?", answer:"", hint:"기온 변동성·이상고온/한파로 누적 냉·온량에 잡음 → 예측 오차↑", starred:false, source:"manual", createdAt:now(), updatedAt:now() }
-          ], createdAt: now(), updatedAt: now() },
-          { id: uid(), name:"고급 생명과학", srb:"홀리 바질 광주기성 탐구: 야간 2/4/6h 광조사, 6h에서 개화 지연·엽수 증가(1.6배). 광주기 조절로 상품성 개선 가능성 분석.", questions:[
-            { id: uid(), text:"플로리젠이 뭐야?", answer:"", hint:"잎에서 만들어져 정아로 이동하는 개화 신호(FT 복합체)", starred:false, source:"manual", createdAt:now(), updatedAt:now() }
-          ], createdAt: now(), updatedAt: now() }
-        ];
-        this.state.selectedSubjectId = this.state.subjects[0].id;
+        this.state.subjects = [];
+        this.state.selectedSubjectId = null;
       } else {
         // migrate: ensure each question has hint
         this.state.subjects.forEach(s=> (s.questions||[]).forEach(q=>{ if(typeof q.hint!=="string") q.hint=""; }));
