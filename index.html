@@ -121,13 +121,14 @@
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <svg viewBox="0 0 24 24" fill="none"><path d="M4 7a3 3 0 0 1 3-3h5l2 2h2a4 4 0 0 1 4 4v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7z" stroke="url(#g)" stroke-width="1.5"/><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#22d3ee"/><stop offset=".9" stop-color="#7c3aed"/></linearGradient></defs></svg>
-      생기부 면접 준비 <span class="pill">
+      생기부 면접 준비 <span class="pill">로컬·다크</span>
     </div>
     <nav class="nav" id="mainNav">
       <a href="#/dashboard" data-route>🏠 대시보드</a>
       <a href="#/subjects" data-route>📚 교과 목록</a>
       <a href="#/practice" data-route>🎤 연습 모드</a>
       <a href="#/analyze" data-route>✏️ 생기부 분석</a>
+      <a href="#/questions" data-route>❓ 예상 질문</a>
       <a href="#/settings" data-route>⚙️ 설정</a>
     </nav>
     <div class="divider"></div>
@@ -291,6 +292,7 @@
         case "subjects": return id ? this.viewSubject(id) : this.viewSubjects();
         case "practice": return this.viewPractice();
         case "analyze": return this.viewAnalyze();
+        case "questions": return this.viewQuestions();
         case "settings": return this.viewSettings();
         default: location.hash = "#/dashboard";
       }
@@ -370,10 +372,13 @@
               <span class="muted" style="margin-left:auto">미답변 ${unanswered} / 총 ${s.questions.length}</span>
             </div>
             <div class="divider"></div>
-            <div class="muted">교과 생기부</div>
+            <div class="row" style="justify-content:space-between; align-items:flex-end">
+              <div class="muted">교과 생기부</div>
+              <div class="muted" id="srbByteCount"></div>
+            </div>
             <div id="srbView" class="srb-box" title="더블클릭 편집">${esc(s.srb || "생기부 텍스트 없음 (더블클릭 또는 편집으로 입력)")}</div>
             <div id="srbEdit" style="display:none">
-              <textarea id="srbTextarea" class="field" placeholder="이 교과의 생기부를 붙여넣거나 작성하세요.">${escAttr(s.srb||"")}</textarea>
+              <textarea id="srbTextarea" class="field" placeholder="이 교과의 생기부를 붙여넣거나 작성하세요." style="min-height: 250px">${escAttr(s.srb||"")}</textarea>
               <div class="toolbar">
                 <button class="button small">저장</button>
                 <button class="button ghost small">취소</button>
@@ -399,16 +404,34 @@
         </div>
       `;
       // SRB edit
-      $("#editSrbBtn").addEventListener("click", ()=>{ $("#srbView").style.display="none"; $("#srbEdit").style.display="block"; $("#srbTextarea").focus(); });
-      $("#srbView").addEventListener("dblclick", ()=> $("#editSrbBtn").click());
+      const srbView = $("#srbView");
+      const srbEdit = $("#srbEdit");
+      const srbTextarea = $("#srbTextarea");
+      const srbByteCount = $("#srbByteCount");
+
+      function updateSrbDisplay() {
+          const text = srbTextarea.value;
+          srbView.innerHTML = esc(text || "생기부 텍스트 없음 (더블클릭 또는 편집으로 입력)");
+          srbByteCount.textContent = `바이트: ${calculateSrbBytes(text)}`;
+      }
+
+      $("#editSrbBtn").addEventListener("click", ()=>{ 
+        srbView.style.display="none"; 
+        srbEdit.style.display="block"; 
+        srbTextarea.focus(); 
+        updateSrbDisplay();
+      });
+      srbView.addEventListener("dblclick", ()=> $("#editSrbBtn").click());
       const srbBtns = $$("#srbEdit .button");
       srbBtns[0].addEventListener("click", ()=>{
-        const t = $("#srbTextarea").value.trim(); s.srb = t; s.updatedAt = now(); this.save(); this.toast("생기부 저장됨"); this.viewSubject(id);
+        const t = srbTextarea.value.trim(); s.srb = t; s.updatedAt = now(); this.save(); this.toast("생기부 저장됨"); this.viewSubject(id);
       });
-      srbBtns[1].addEventListener("click", ()=>{ $("#srbEdit").style.display="none"; $("#srbView").style.display="block"; });
+      srbBtns[1].addEventListener("click", ()=>{ srbEdit.style.display="none"; srbView.style.display="block"; });
       $("#clearSrbBtn").addEventListener("click", ()=>{ if(confirm("생기부를 비울까요?")){ s.srb=""; s.updatedAt=now(); this.save(); this.viewSubject(id);} });
       $("#renameBtn").addEventListener("click", ()=> this.renameSubject(id));
       $("#deleteBtn").addEventListener("click", ()=> this.deleteSubject(id));
+      srbTextarea.addEventListener('input', updateSrbDisplay);
+      updateSrbDisplay();
 
       // manual questions
       $("#newQ").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#addQBtn").click(); });
@@ -467,6 +490,39 @@
       }));
       this.autoExpandAllTextareas();
     },
+    
+    viewQuestions(){
+        const allQuestions = [];
+        this.state.subjects.forEach(s => {
+            s.questions.forEach(q => {
+                allQuestions.push({
+                    ...q,
+                    subjectName: s.name,
+                    subjectId: s.id
+                });
+            });
+        });
+
+        this.view.innerHTML = `
+            <div class="card">
+                <h1>예상 질문 목록</h1>
+                <p class="muted">전체 교과의 질문들을 모아 보았습니다.</p>
+                ${ allQuestions.length ? `
+                    <table class="table">
+                        <thead><tr><th>질문</th><th>교과</th></tr></thead>
+                        <tbody>
+                            ${allQuestions.map(q => `
+                                <tr>
+                                    <td><a href="#/subjects/${q.subjectId}">${esc(q.text)}</a></td>
+                                    <td>${esc(q.subjectName)}</td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                ` : `<div class="empty">아직 추가된 질문이 없습니다.</div>`}
+            </div>
+        `;
+    },
 
     viewAnalyze(){
       const hash = new URLSearchParams(location.hash.slice(location.hash.indexOf('?')));
@@ -486,8 +542,11 @@
               </select>
             </div>
             <div class="col" style="margin-top:12px">
-              <label>생기부 텍스트</label>
-              <textarea id="srbTextarea" class="field" placeholder="여기에 생기부 내용을 붙여넣으세요." style="min-height: 400px">${escAttr(s?.srb || '')}</textarea>
+              <div class="row" style="justify-content:space-between; align-items:flex-end">
+                <label>생기부 텍스트</label>
+                <div class="muted" id="srbByteCount"></div>
+              </div>
+              <textarea id="srbTextarea" class="field" placeholder="여기에 생기부 내용을 붙여넣으세요." style="min-height: 250px">${escAttr(s?.srb || '')}</textarea>
             </div>
           </div>
           <div class="card">
@@ -510,12 +569,21 @@
 
       const subjectSelector = $("#subjectSelector");
       const srbTextarea = $("#srbTextarea");
+      const srbByteCount = $("#srbByteCount");
+
+      function updateSrbDisplay() {
+          const text = srbTextarea.value;
+          srbByteCount.textContent = `바이트: ${calculateSrbBytes(text)}`;
+      }
 
       subjectSelector.addEventListener('change', (e) => {
         const selectedId = e.target.value;
         const selectedSub = this.state.subjects.find(sub => sub.id === selectedId);
         srbTextarea.value = selectedSub?.srb || '';
+        updateSrbDisplay();
       });
+      srbTextarea.addEventListener('input', updateSrbDisplay);
+      updateSrbDisplay();
       this.autoExpandAllTextareas();
     },
 
@@ -779,6 +847,27 @@
   function esc(s){ return String(s||"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;","&gt;":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
   function escAttr(s){ return esc(s).replace(/"/g,"&quot;"); }
   function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  // Custom byte calculation function
+  function calculateSrbBytes(text) {
+      let byteCount = 0;
+      for (let i = 0; i < text.length; i++) {
+          const char = text[i];
+          // Check for new line
+          if (char === '\n') {
+              byteCount += 2;
+          }
+          // Check for Korean characters (Hangul)
+          else if (char.match(/[\uAC00-\uD7A3]/)) {
+              byteCount += 3;
+          }
+          // All other characters (English, numbers, etc.)
+          else {
+              byteCount += 1;
+          }
+      }
+      return byteCount;
+  }
 
   app.init();
 })();</script>
