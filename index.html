@@ -97,7 +97,7 @@
   summary{cursor:pointer; font-weight:600}
   textarea{
     min-height:120px;
-    resize:vertical;
+    resize:none;
     overflow: hidden;
   }
   .srb-box{white-space:pre-wrap; background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:12px; min-height:220px; overflow-wrap: break-word; overflow-y: auto;}
@@ -129,6 +129,7 @@
       <a href="#/practice" data-route>🎤 연습 모드</a>
       <a href="#/analyze" data-route>✏️ 생기부 분석</a>
       <a href="#/questions" data-route>❓ 예상 질문</a>
+      <a href="#/all-questions" data-route>📚 전체 질문</a>
       <a href="#/settings" data-route>⚙️ 설정</a>
     </nav>
     <div class="divider"></div>
@@ -293,6 +294,7 @@
         case "practice": return this.viewPractice();
         case "analyze": return this.viewAnalyze();
         case "questions": return this.viewQuestions();
+        case "all-questions": return this.viewAllQuestions();
         case "settings": return this.viewSettings();
         default: location.hash = "#/dashboard";
       }
@@ -685,6 +687,59 @@
         }
     },
 
+    viewAllQuestions(){
+        const allQuestions = this.state.subjects.flatMap(s => 
+          s.questions.map(q => ({...q, subjectName: s.name}))
+        ).sort((a,b) => b.updatedAt - a.updatedAt);
+
+        this.view.innerHTML = `
+          <div class="card">
+            <h1>전체 질문 목록</h1>
+            <div class="muted">총 ${allQuestions.length}개의 질문이 있습니다.</div>
+            <div class="divider"></div>
+            <div id="qList">
+              ${allQuestions.length ? '' : '<div class="empty">질문이 없습니다.</div>'}
+            </div>
+            <div class="toolbar" style="margin-top: 20px;">
+              <a class="button small ghost" href="#/questions">돌아가기</a>
+            </div>
+          </div>
+        `;
+
+        const qList = $("#qList");
+        allQuestions.forEach(q => {
+            const node = document.createElement("details");
+            node.open = false;
+            node.innerHTML = `
+                <summary class="row-nowrap">
+                    <span>${esc(q.text)}</span>
+                    <span class="tag" style="margin-left: 12px;">${esc(q.subjectName)}</span>
+                    <span style="margin-left:auto" class="row-nowrap">
+                        <button class="button ghost small" data-star="${q.id}">${q.starred ? "★" : "☆"}</button>
+                    </span>
+                </summary>
+                <div class="col" style="margin-top:8px">
+                    <label>힌트</label>
+                    <textarea class="field" data-hint="${q.id}" placeholder="키워드/구조/답변 뼈대 등 힌트를 적어두세요." readonly>${escAttr(q.hint || "")}</textarea>
+                    <label>답변</label>
+                    <textarea class="field" data-ans="${q.id}" placeholder="여기에 답변을 정리하세요." readonly>${escAttr(q.answer || "")}</textarea>
+                </div>
+            `;
+            qList.appendChild(node);
+        });
+
+        // Add star functionality
+        $$("[data-star]").forEach(btn => btn.addEventListener("click", (e) => {
+            const idq = e.target.dataset.star;
+            const q = this.state.subjects.flatMap(s => s.questions).find(x => x.id === idq);
+            if (!q) return;
+            q.starred = !q.starred;
+            this.save();
+            e.target.textContent = q.starred ? "★" : "☆";
+        }));
+        this.autoExpandAllTextareas();
+    },
+
     viewAnalyze(){
       const hash = new URLSearchParams(location.hash.slice(location.hash.indexOf('?')));
       const subId = hash.get('id');
@@ -744,6 +799,7 @@
         this.state.selectedSubjectId = selectedId;
         this.save();
         updateSrbDisplay();
+        this.autoExpandAllTextareas();
       });
       srbTextarea.addEventListener('input', () => {
         const selectedSub = this.state.subjects.find(sub => sub.id === subjectSelector.value);
@@ -965,7 +1021,7 @@
               <button class="button small" id="nextBtn">${idx<qs.length-1?"다음":"종료"}</button>
             </div>
           </div>
-          ${ hasTimer ? `<div class="bar" style="margin-top:8px"><span id="timerBarFill"></span></div>` : "" }
+          ${ hasTimer ? `<div class="bar" style="margin-top:10px"><span id="timerBarFill"></span></div>` : "" }
           <div class="card" style="margin-top:10px">
             <h2>${esc(q.text)}</h2>
             <div class="muted">힌트: ${esc((hintText||"").slice(0, 160))}${(hintText&&hintText.length>160)?"...":""}</div>
