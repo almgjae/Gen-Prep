@@ -212,9 +212,7 @@
       this.searchInput.addEventListener("keydown", e=>{ if(e.key==="Enter") this.searchGo(); });
 
       document.addEventListener("keydown", (e)=>{
-        if(e.key==="/"){ e.preventDefault(); this.searchInput.focus(); }
-        if(e.key.toLowerCase()==="n"){ this.newSubjectInput.focus(); }
-        if(e.key==="Escape"){ this.sidebar.classList.remove("open"); this.app.classList.remove("collapsed"); }
+      // 단축키 코드 삭제됨
       });
       this.toggleMenu.addEventListener("click", ()=> {
         if(window.innerWidth <= 1000){
@@ -1047,10 +1045,7 @@
 
       document.onkeydown = (e)=>{
         if(done) return;
-        if(e.code==="Space"){ e.preventDefault(); next(false); }
-        if(e.key.toLowerCase()==="s"){ const q = qs[idx]; if(bookmarked.has(q.id)) bookmarked.delete(q.id); else bookmarked.add(q.id); render(); }
-        if(hasTimer && e.key.toLowerCase()==="p"){ togglePause(); }
-        if(hasTimer && e.key.toLowerCase()==="r"){ restartQuestion(); }
+        // 단축키 코드 삭제됨
       };
     },
     
