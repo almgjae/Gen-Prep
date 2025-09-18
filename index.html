@@ -982,7 +982,6 @@
       let timerId = null;
       const sessionStart = Date.now();
       const bookmarked = new Set();
-      let lastDisplayedSec = -1; // 마지막으로 표시된 초를 추적
 
       const next = (auto = false) => {
         if (idx < qs.length - 1) {
@@ -1032,7 +1031,6 @@
           paused = false;
           pauseStartedAt = 0;
           accPaused = 0;
-          lastDisplayedSec = -1; // 리셋
           schedule();
         }
       };
@@ -1040,7 +1038,7 @@
       const schedule = () => {
         if (timerId) clearInterval(timerId);
         if (!hasTimer) return;
-        timerId = setInterval(tick, 250); // 간격을 250ms로 조정
+        timerId = setInterval(tick, 100);
       };
 
       const tick = () => {
@@ -1075,7 +1073,6 @@
         if (!hasTimer) return;
         questionStart = Date.now();
         accPaused = 0; paused = false; remaining = perSec;
-        lastDisplayedSec = -1; // 리셋
         schedule(); updateTimerUI();
       };
 
@@ -1084,16 +1081,10 @@
         const bar = $("#timerBarFill");
         const pauseBtn = $("#pauseBtn");
         if (!hasTimer || !timerEl || !bar) return;
-
         const secs = Math.ceil(remaining);
-        if (secs !== lastDisplayedSec) { // 초 단위가 변경될 때만 텍스트 업데이트
-            timerEl.textContent = fmtSec(secs);
-            timerEl.classList.toggle("timer-danger", secs <= 5 && !paused);
-            lastDisplayedSec = secs;
-        }
-        
+        timerEl.textContent = fmtSec(secs);
         bar.style.width = `${Math.max(0, Math.min(100, (1 - (remaining / perSec)) * 100))}%`;
-        
+        timerEl.classList.toggle("timer-danger", secs <= 5 && !paused);
         if (pauseBtn) pauseBtn.textContent = paused ? "▶ 재개" : "⏸ 일시정지";
         const ses = $("#sessionElapsed");
         if (ses) {
@@ -1232,7 +1223,7 @@
   function fmtSec(s){ s = Math.max(0, Math.floor(s)); const m = Math.floor(s/60), r = s%60; return `${String(m).padStart(2,"0")}:${String(r).padStart(2,"0")}`; }
   function esc(s){ return String(s||"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":`&lt;`,">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
   function escAttr(s){ return esc(s).replace(/"/g,"&quot;"); }
-  function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a.i]]; } return a; }
+  function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
   // Custom byte calculation function
   function calculateSrbBytes(text) {
