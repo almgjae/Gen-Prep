@@ -7,7 +7,7 @@
 <style>
   :root{
     --bg:#0f172a; --bg2:#0b1022; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb;
-    --accent:#7c3aed; --accent2:#22d3ee; --danger:#ef4444; --ok:#10b981; --border:#1f2937;
+    --accent:#4C08A3; --accent2:#7c3aed; --danger:#ef4444; --ok:#10b981; --border:#1f2937;
     --chip:#1e293b; --shadow: rgba(2,6,23,.3);
   }
   *{box-sizing:border-box}
@@ -38,8 +38,8 @@
   .subjects{display:flex; flex-direction:column; gap:6px; overflow:auto; padding-right:4px}
   .chip{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px; background:var(--chip); border:1px solid var(--border); cursor:pointer; white-space:nowrap}
   .chip.active {
-    background-color: rgba(30, 41, 59, 0.8);
-    border: 1px solid var(--border);
+    background-color: rgba(76, 8, 163, 0.5); /* new */
+    border: 1px solid rgba(76, 8, 163, 0.8); /* new */
   }
   .row{display:flex; align-items:center; gap:8px}
   .row-nowrap{display:flex; align-items:center; gap:8px; flex-wrap:nowrap}
@@ -49,8 +49,9 @@
   }
   .inline-field{ width:auto !important; min-width:80px; }
   .button{
-    border:1px solid var(--border); background:linear-gradient(180deg, #1f1147, #160c36);
-    border-color:#261a57; cursor:pointer; user-select:none;
+    border:1px solid var(--border); background:linear-gradient(180deg, #5c11c7, #4c08a3); /* new */
+    border-color:#4c08a3; /* new */
+    cursor:pointer; user-select:none;
     display:inline-flex; align-items:center; justify-content:center; width:auto; white-space:nowrap; color:var(--text);
   }
   .button:hover{filter:brightness(1.05)}
@@ -88,6 +89,7 @@
     .grid-2 { grid-template-columns: 1fr; }
     .menu-btn{display:block}
     .subjects { display: none; }
+    .sidebar > .muted { display: none; }
     
     /* Mobile-specific changes for subject table */
     .table thead th:nth-child(3),
@@ -118,12 +120,23 @@
   .timer-danger{color:#fecaca}
   .hscroll{display:flex; gap:8px; overflow:auto; padding-bottom:4px}
   ::placeholder{color:var(--muted)}
+
+  /* Practice mode specific styles */
+  .practice-main{
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    height:100%; padding:16px;
+  }
+  .practice-card{
+    background:rgba(17,24,39,.06); border:1px solid var(--border);
+    border-radius:16px; padding:16px; max-width: 800px; width:100%;
+  }
+
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
      crossorigin="anonymous"></script>
 </head>
 <body>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
+ <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
      crossorigin="anonymous"></script>
 <div class="app" id="app">
   <aside class="sidebar" id="sidebar">
@@ -132,12 +145,12 @@
       생기부 면접 준비 <span class="pill">로컬·다크</span>
     </div>
     <nav class="nav" id="mainNav">
-      <a href="#/dashboard" data-route>🏠 대시보드</a>
+      <a href="#/dashboard" data-route>🏠 홈</a>
       <a href="#/subjects" data-route>📚 교과 목록</a>
       <a href="#/practice" data-route>🎤 연습 모드</a>
       <a href="#/analyze" data-route>✏️ 생기부 분석</a>
       <a href="#/questions" data-route>❓ 예상 질문</a>
-      <a href="#/all-questions" data-route>📚 전체 질문</a>
+      <a href="#/all-questions" data-route>❔ 전체 질문</a>
       <a href="#/settings" data-route>⚙️ 설정</a>
     </nav>
     <div class="divider"></div>
@@ -311,15 +324,8 @@
       const unanswered = this.state.subjects.reduce((acc,s)=> acc + s.questions.filter(q=>!q.answer).length ,0);
       const totalQ = this.state.subjects.reduce((acc,s)=> acc + s.questions.length ,0);
       this.view.innerHTML = `
-        <div class="grid grid-3">
-          <div class="card">
-            <h1>오늘 할 일</h1>
-            <div class="row">
-              <a class="button small" href="#/practice">연습 시작</a>
-              <a class="button ghost small" href="#/subjects">교과 관리</a>
-            </div>
-          </div>
-          <div class="card">
+        <div class="grid grid-2">
+          <div class="card" style="grid-column: 1 / -1;">
             <h2>요약</h2>
             <table class="table">
               <tr><th>교과 수</th><td>${this.state.subjects.length}</td></tr>
@@ -327,7 +333,7 @@
               <tr><th>미답변 질문</th><td>${unanswered}</td></tr>
             </table>
           </div>
-          <div class="card" style="grid-column: 1 / -1">
+          <div class="card" style="grid-column: 1 / -1;">
             <h2>최근 편집한 교과</h2>
             ${ recent.length ? `<div class="hscroll">${recent.map(s=>`<a class="chip" href="#/subjects/${s.id}">${s.name}</a>`).join("")}</div>` : `<div class="empty">최근 편집 없음</div>` }
           </div>
@@ -340,6 +346,10 @@
       this.view.innerHTML = `
         <div class="card">
           <h1>교과 목록</h1>
+          <div class="row" style="margin-bottom: 12px;">
+            <input id="newSubjectInputInView" class="input subject-add-box" placeholder="새 교과명" />
+            <button class="button small" id="addSubjectBtnInView">➕ 추가</button>
+          </div>
           ${ list.length ? `
             <table class="table">
               <thead><tr><th>교과명</th><th>질문</th><th>최근 수정</th><th></th></tr></thead>
@@ -362,6 +372,13 @@
       `;
       $$("[data-rename]").forEach(btn=> btn.addEventListener("click", ()=> this.renameSubject(btn.dataset.rename)));
       $$("[data-del]").forEach(btn=> btn.addEventListener("click", ()=> this.deleteSubject(btn.dataset.del)));
+      
+      const newSubjectInputInView = $("#newSubjectInputInView");
+      const addSubjectBtnInView = $("#addSubjectBtnInView");
+      addSubjectBtnInView.addEventListener("click", () => this.addSubject(newSubjectInputInView.value));
+      newSubjectInputInView.addEventListener("keydown", e => {
+        if(e.key === "Enter") this.addSubject(newSubjectInputInView.value);
+      });
     },
 
     viewSubject(id){
@@ -507,7 +524,7 @@
         }
 
         const subjectsHtml = this.state.subjects.map(sub => `<option value="${sub.id}" ${sub.id === selectedId ? 'selected' : ''}>${esc(sub.name)}</option>`).join('');
-        const totalQuestions = this.state.subjects.reduce((sum, s) => sum + s.questions.length, 0);
+        
 
         this.view.innerHTML = `
             <div class="grid grid-2">
@@ -537,7 +554,7 @@
                         <textarea id="questionTextarea" class="field" placeholder="질문을 입력하세요."></textarea>
                     </div>
                     <div class="toolbar">
-                        <span class="muted" id="qCount">전체 예상 질문 수: ${totalQuestions}</span>
+                        
                         <button class="button small" id="addQuestionBtn">➕ 예상 질문 추가</button>
                     </div>
                 </div>
@@ -557,7 +574,7 @@
         const qList = $("#qList");
         const keywordsTextarea = $("#keywordsTextarea");
         const questionTextarea = $("#questionTextarea");
-        const qCountDisplay = $("#qCount");
+        
         const addQuestionBtn = $("#addQuestionBtn");
 
         const renderQuestionsList = (subjectId) => {
@@ -649,7 +666,7 @@
                 this.save();
                 this.toast("질문이 추가되었습니다.");
                 renderQuestionsList(subjectId);
-                qCountDisplay.textContent = `전체 예상 질문 수: ${this.state.subjects.reduce((sum, s) => sum + s.questions.length, 0)}`;
+                
                 questionTextarea.value = '';
                 keywordsTextarea.value = '';
                 this.autoExpandAllTextareas();
@@ -706,7 +723,7 @@
               ${allQuestions.length ? '' : '<div class="empty">질문이 없습니다.</div>'}
             </div>
             <div class="toolbar" style="margin-top: 20px;">
-              <a class="button small ghost" href="#/questions">돌아가기</a>
+              <a class="button small" href="#/questions">돌아가기</a>
             </div>
           </div>
         `;
@@ -823,7 +840,7 @@
       const subs = this.state.subjects;
       this.view.innerHTML = `
         <div class="grid">
-          <div class="card">
+          <div class="card" id="practiceSettings">
             <h1>연습 설정</h1>
             <div class="muted">연습할 교과, 질문 개수, 문항당 제한시간을 선택하세요.</div>
             <div class="divider"></div>
@@ -848,7 +865,7 @@
               </div>
             </div>
           </div>
-          <div class="card" id="practiceArea" style="grid-column: 1 / -1; display:none"></div>
+          <div class="practice-main" id="practiceArea" style="display: none;"></div>
         </div>
       `;
       $("#startPractice").addEventListener("click", ()=>{
@@ -859,9 +876,166 @@
         if(!isNaN(custom) && custom>=0) limit = custom;
         const pool = this.collectQuestions(selectedIds);
         if(pool.length===0){ this.toast("선택 교과에 질문이 없습니다", true); return; }
+        
         const qs = shuffle(pool).slice(0, Math.min(count, pool.length));
-        this.runPractice(qs, limit);
+        this.startPracticeSession(qs, limit);
       });
+    },
+
+    startPracticeSession(qs, perSec) {
+      const practiceArea = $("#practiceArea");
+      const practiceSettings = $("#practiceSettings");
+      practiceSettings.style.display = "none";
+      practiceArea.style.display = "flex";
+
+      const hasTimer = perSec > 0;
+      let idx = 0, done = false;
+      let questionStart = null;
+      let remaining = perSec;
+      let paused = false;
+      let pauseStartedAt = 0;
+      let accPaused = 0;
+      let timerId = null;
+      const sessionStart = Date.now();
+      const bookmarked = new Set();
+
+      const next = (auto = false) => {
+        if (idx < qs.length - 1) {
+          idx++;
+          resetTimer();
+          render();
+          if (auto) alert("시간 종료. 다음 문항으로 넘어갑니다.");
+        } else {
+          finish();
+        }
+      };
+
+      const resetTimer = () => {
+        if (hasTimer) {
+          remaining = perSec;
+          questionStart = Date.now();
+          paused = false;
+          pauseStartedAt = 0;
+          accPaused = 0;
+          schedule();
+        }
+      };
+
+      const schedule = () => {
+        if (timerId) clearInterval(timerId);
+        if (!hasTimer) return;
+        timerId = setInterval(tick, 100);
+      };
+
+      const tick = () => {
+        if (!hasTimer || paused) return;
+        const nowt = Date.now();
+        const elapsed = (nowt - questionStart - accPaused) / 1000;
+        const left = Math.max(0, perSec - elapsed);
+        remaining = left;
+        updateTimerUI();
+        if (left <= 0) {
+          clearInterval(timerId);
+          setTimeout(() => next(true), 50);
+        }
+      };
+
+      const togglePause = () => {
+        if (!hasTimer) return;
+        if (!paused) {
+          paused = true;
+          pauseStartedAt = Date.now();
+          updateTimerUI();
+        } else {
+          paused = false;
+          accPaused += (Date.now() - pauseStartedAt);
+          updateTimerUI();
+        }
+      };
+
+      const restartQuestion = () => {
+        if (!hasTimer) return;
+        questionStart = Date.now();
+        accPaused = 0; paused = false; remaining = perSec;
+        schedule(); updateTimerUI();
+      };
+
+      const finish = () => {
+        done = true;
+        if (timerId) clearInterval(timerId);
+        const elapsedSec = Math.round((Date.now() - sessionStart) / 1000);
+        const stars = qs.filter(q => bookmarked.has(q.id));
+        practiceArea.innerHTML = `
+          <div class="practice-card">
+            <h2>연습 종료</h2>
+            <p>총 ${qs.length}문항 · 즐겨찾기 ${stars.length}문항 · 총 소요 ${fmtSec(elapsedSec)}</p>
+            ${stars.length ? `<div class="col">${stars.map(q => `<div class="chip" style="margin-bottom:8px">★ ${esc(q.text)}</div>`).join("")}</div>` : `<div class="empty">즐겨찾기 없음</div>`}
+            <div class="toolbar">
+              <button class="button small" onclick="location.reload()">홈으로 이동</button>
+            </div>
+          </div>
+        `;
+      };
+
+      const updateTimerUI = () => {
+        const timerEl = $("#timerText");
+        const bar = $("#timerBarFill");
+        const pauseBtn = $("#pauseBtn");
+        if (!hasTimer || !timerEl || !bar) return;
+        const secs = Math.ceil(remaining);
+        timerEl.textContent = fmtSec(secs);
+        bar.style.width = `${Math.max(0, Math.min(100, (1 - (remaining / perSec)) * 100))}%`;
+        timerEl.classList.toggle("timer-danger", secs <= 5 && !paused);
+        if (pauseBtn) pauseBtn.textContent = paused ? "▶ 재개" : "⏸ 일시정지";
+        const ses = $("#sessionElapsed");
+        if (ses) {
+          const e = Math.round((Date.now() - sessionStart) / 1000);
+          ses.textContent = fmtSec(e);
+        }
+      };
+
+      const render = () => {
+        const q = qs[idx];
+        const sesElapsed = Math.round((Date.now() - sessionStart) / 1000);
+        const hintText = (q.hint && q.hint.trim()) ? q.hint : (q.answer || "");
+        practiceArea.innerHTML = `
+          <div class="practice-card">
+            <div class="row-nowrap" style="justify-content:space-between; gap:10px">
+              <div>문항 ${idx + 1}/${qs.length}${hasTimer ? ` · 남은시간 <span class="timer" id="timerText"></span>` : ""}</div>
+              <div class="muted">세션 경과: <span class="timer" id="sessionElapsed">${fmtSec(sesElapsed)}</span></div>
+              <div class="row-nowrap">
+                ${hasTimer ? `<button class="button ghost small" id="pauseBtn">⏸ 일시정지</button>
+                <button class="button ghost small" id="restartBtn">↺ 리셋</button>` : ""}
+                <button class="button ghost small" id="starBtn">${bookmarked.has(q.id) ? "★ 즐겨찾기" : "☆ 즐겨찾기"}</button>
+                <button class="button small" id="nextBtn">${idx < qs.length - 1 ? "다음" : "종료"}</button>
+              </div>
+            </div>
+            ${hasTimer ? `<div class="bar" style="margin-top:10px"><span id="timerBarFill"></span></div>` : ""}
+            <div style="margin-top:10px">
+              <h2>${esc(q.text)}</h2>
+              <div class="muted">힌트: ${esc((hintText || "").slice(0, 160))}${(hintText && hintText.length > 160) ? "..." : ""}</div>
+            </div>
+          </div>
+        `;
+        $("#nextBtn").addEventListener("click", () => next(false));
+        $("#starBtn").addEventListener("click", () => {
+          if (bookmarked.has(q.id)) bookmarked.delete(q.id);
+          else bookmarked.add(q.id);
+          render();
+        });
+        if (hasTimer) {
+          $("#pauseBtn").addEventListener("click", togglePause);
+          $("#restartBtn").addEventListener("click", restartQuestion);
+        }
+        updateTimerUI();
+      };
+
+      if (hasTimer) {
+        resetTimer();
+      } else {
+        questionStart = Date.now();
+      }
+      render();
     },
 
     viewSettings(){
@@ -898,159 +1072,12 @@
       });
     },
 
-    /* ---------- Practice engine (uses hint in UI) ---------- */
+    /* ---------- Practice related functions ---------- */
     collectQuestions(subjectIds){
       const set = new Set(subjectIds);
       const qs = [];
       this.state.subjects.forEach(s=>{ if(set.has(s.id)) qs.push(...s.questions); });
       return qs;
-    },
-    runPractice(qs, perSec){
-      const area = $("#practiceArea"); area.style.display="block";
-      const hasTimer = perSec > 0;
-      let idx = 0, done=false;
-      let questionStart = null;
-      let remaining = perSec;
-      let paused = false;
-      let pauseStartedAt = 0;
-      let accPaused = 0;
-      let timerId = null;
-      const sessionStart = Date.now();
-
-      const next = (auto=false) => {
-        if(idx < qs.length-1){
-          idx++;
-          resetTimer();
-          render();
-          if(auto) app.toast("시간 종료 · 다음 문항");
-        }else{
-          finish();
-        }
-      };
-
-      const resetTimer = () => {
-        if(hasTimer){
-          remaining = perSec;
-          questionStart = Date.now();
-          paused = false;
-          pauseStartedAt = 0;
-          accPaused = 0;
-          schedule();
-        }
-      };
-
-      const schedule = () => {
-        if(timerId) clearInterval(timerId);
-        if(!hasTimer) return;
-        timerId = setInterval(tick, 100);
-      };
-
-      const tick = () => {
-        if(!hasTimer || paused) return;
-        const nowt = Date.now();
-        const elapsed = (nowt - questionStart - accPaused) / 1000;
-        const left = Math.max(0, perSec - elapsed);
-        remaining = left;
-        updateTimerUI();
-        if(left <= 0){
-          clearInterval(timerId);
-          setTimeout(()=> next(true), 50);
-        }
-      };
-
-      const togglePause = () => {
-        if(!hasTimer) return;
-        if(!paused){
-          paused = true;
-          pauseStartedAt = Date.now();
-          updateTimerUI();
-        }else{
-          paused = false;
-          accPaused += (Date.now() - pauseStartedAt);
-          updateTimerUI();
-        }
-      };
-
-      const restartQuestion = () => {
-        if(!hasTimer) return;
-        questionStart = Date.now();
-        accPaused = 0; paused = false; remaining = perSec;
-        schedule(); updateTimerUI();
-      };
-
-      const finish = () => {
-        done = true; if(timerId) clearInterval(timerId);
-        const elapsedSec = Math.round((Date.now() - sessionStart)/1000);
-        const stars = qs.filter(q=> bookmarked.has(q.id));
-        area.innerHTML = `
-          <div class="card">
-            <h2>연습 종료</h2>
-            <p>총 ${qs.length}문항 · 즐겨찾기 ${stars.length}문항 · 총 소요 ${fmtSec(elapsedSec)}</p>
-            ${ stars.length ? `<div class="col">${stars.map(q=>`<div class="chip">★ ${esc(q.text)}</div>`).join("")}</div>` : `<div class="empty">즐겨찾기 없음</div>` }
-            <div class="toolbar">
-              <a class="button small" href="#/practice">다시 설정</a>
-              <a class="button ghost small" href="#/subjects/${this.state.selectedSubjectId || this.state.subjects[0]?.id || ""}">교과로 이동</a>
-            </div>
-          </div>
-        `;
-      };
-
-      const bookmarked = new Set();
-
-      const updateTimerUI = () => {
-        const timerEl = $("#timerText");
-        const bar = $("#timerBarFill");
-        const pauseBtn = $("#pauseBtn");
-        if(!hasTimer || !timerEl || !bar) return;
-        const secs = Math.ceil(remaining);
-        timerEl.textContent = fmtSec(secs);
-        bar.style.width = `${Math.max(0, Math.min(100, ((perSec - remaining)/perSec)*100))}%`;
-        timerEl.classList.toggle("timer-danger", secs<=5 && !paused);
-        if(pauseBtn) pauseBtn.textContent = paused ? "▶ 재개" : "⏸ 일시정지";
-        const ses = $("#sessionElapsed"); if(ses){ const e=Math.round((Date.now()-sessionStart)/1000); ses.textContent = fmtSec(e); }
-      };
-
-      const render = () => {
-        const q = qs[idx];
-        if(typeof q.hint!=="string") q.hint="";
-        const sesElapsed = Math.round((Date.now() - sessionStart)/1000);
-        const hintText = (q.hint && q.hint.trim()) ? q.hint : (q.answer || "");
-        area.innerHTML = `
-          <div class="row-nowrap" style="justify-content:space-between; gap:10px">
-            <div>문항 ${idx+1}/${qs.length}${hasTimer ? ` · 남은시간 <span class="timer" id="timerText"></span>` : ""}</div>
-            <div class="muted">세션 경과: <span class="timer" id="sessionElapsed">${fmtSec(sesElapsed)}</span></div>
-            <div class="row-nowrap">
-              ${ hasTimer ? `<button class="button ghost small" id="pauseBtn">⏸ 일시정지</button>
-              <button class="button ghost small" id="restartBtn">↺ 리셋</button>` : "" }
-              <button class="button ghost small" id="starBtn">${bookmarked.has(q.id)?"★ 즐겨찾기":"☆ 즐겨찾기"}</button>
-              <button class="button small" id="nextBtn">${idx<qs.length-1?"다음":"종료"}</button>
-            </div>
-          </div>
-          ${ hasTimer ? `<div class="bar" style="margin-top:10px"><span id="timerBarFill"></span></div>` : "" }
-          <div class="card" style="margin-top:10px">
-            <h2>${esc(q.text)}</h2>
-            <div class="muted">힌트: ${esc((hintText||"").slice(0, 160))}${(hintText&&hintText.length>160)?"...":""}</div>
-          </div>
-        `;
-        $("#nextBtn").addEventListener("click", ()=> next(false));
-        $("#starBtn").addEventListener("click", ()=>{
-          if(bookmarked.has(q.id)) bookmarked.delete(q.id); else bookmarked.add(q.id);
-          render();
-        });
-        if(hasTimer){
-          $("#pauseBtn").addEventListener("click", togglePause);
-          $("#restartBtn").addEventListener("click", restartQuestion);
-        }
-        updateTimerUI();
-      };
-
-      if(hasTimer){ resetTimer(); } else { questionStart = Date.now(); }
-      render();
-
-      document.onkeydown = (e)=>{
-        if(done) return;
-        // 단축키 코드 삭제됨
-      };
     },
     
     // Auto-resize all relevant textareas
@@ -1073,7 +1100,7 @@
   function now(){ return Date.now(); }
   function fmtTime(t){ if(!t) return "-"; const d=new Date(t); return d.toLocaleString(); }
   function fmtSec(s){ s = Math.max(0, Math.floor(s)); const m = Math.floor(s/60), r = s%60; return `${String(m).padStart(2,"0")}:${String(r).padStart(2,"0")}`; }
-  function esc(s){ return String(s||"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;","&gt;":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+  function esc(s){ return String(s||"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":`&lt;`,">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
   function escAttr(s){ return esc(s).replace(/"/g,"&quot;"); }
   function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
