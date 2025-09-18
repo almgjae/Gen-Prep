@@ -1577,6 +1577,8 @@ if (cameraEnabled && stream) {
 
 <!-- --- AdSafe patch: dynamic Auto ads loader --- -->
 <script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
+     crossorigin="anonymous"></script>
 (function(){
   const ALLOW = new Set([
     '#/dashboard', '#/subjects', '#/questions', '#/all-questions', '#/analyze', '#/settings', '#/'
@@ -1618,6 +1620,70 @@ if (cameraEnabled && stream) {
 })();
 </script>
 <!-- --- AdSafe patch end --- -->
+
+
+<!-- AdSense dynamic loader: loads only on content routes (safe) -->
+<script>
+(function(){
+  const ALLOW = new Set([
+    '#/dashboard', '#/subjects', '#/questions', '#/all-questions', '#/analyze', '#/settings', '#/'
+  ]);
+  const ADS_URL = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454';
+  let __adsLoaded = false;
+
+  const route = () => (location.hash || '#/').replace(/\?.*$/, '');
+
+  function setPracticeGuard(){
+    document.documentElement.classList.toggle('practice-mode', route() === '#/practice');
+  }
+
+  function ensureAutoAds(){
+    if (__adsLoaded) return;
+    const r = route();
+    if (!ALLOW.has(r)) return;
+    // append adsbygoogle.js once
+    const s = document.createElement('script');
+    s.async = true;
+    s.crossOrigin = 'anonymous';
+    s.src = ADS_URL;
+    s.onload = function(){
+      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){}
+    };
+    document.head.appendChild(s);
+    __adsLoaded = true;
+  }
+
+  function notifyPageview(){
+    try {
+      if (window.adsbygoogle && window.adsbygoogle.loaded) {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      }
+    } catch(e){}
+  }
+
+  // Bind intro CTA(s)
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('#enterApp, #enter, #enter-hero');
+    if (!btn) return;
+    setTimeout(function(){
+      setPracticeGuard();
+      ensureAutoAds();
+      notifyPageview();
+    }, 0);
+  });
+
+  // Initial load + route changes
+  document.addEventListener('DOMContentLoaded', function(){
+    setPracticeGuard();
+    ensureAutoAds();
+  });
+  window.addEventListener('hashchange', function(){
+    setPracticeGuard();
+    ensureAutoAds();
+    notifyPageview();
+  });
+})();
+</script>
 
 </body>
 </html>
