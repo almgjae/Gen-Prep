@@ -888,6 +888,9 @@
       practiceSettings.style.display = "none";
       practiceArea.style.display = "flex";
 
+      $("#sidebar").style.display = "none";
+      $(".topbar").style.display = "none";
+
       const hasTimer = perSec > 0;
       let idx = 0, done = false;
       let questionStart = null;
@@ -904,10 +907,26 @@
           idx++;
           resetTimer();
           render();
-          if (auto) alert("시간 종료. 다음 문항으로 넘어갑니다.");
         } else {
           finish();
         }
+      };
+
+      const finish = () => {
+        done = true;
+        if (timerId) clearInterval(timerId);
+        const elapsedSec = Math.round((Date.now() - sessionStart) / 1000);
+        const stars = qs.filter(q => bookmarked.has(q.id));
+        practiceArea.innerHTML = `
+          <div class="practice-card">
+            <h2>연습 종료</h2>
+            <p>총 ${qs.length}문항 · 즐겨찾기 ${stars.length}문항 · 총 소요 ${fmtSec(elapsedSec)}</p>
+            ${stars.length ? `<div class="col">${stars.map(q => `<div class="chip" style="margin-bottom:8px">★ ${esc(q.text)}</div>`).join("")}</div>` : `<div class="empty">즐겨찾기 없음</div>`}
+            <div class="toolbar">
+              <button class="button small" onclick="location.reload()">홈으로 이동</button>
+            </div>
+          </div>
+        `;
       };
 
       const resetTimer = () => {
@@ -960,23 +979,6 @@
         schedule(); updateTimerUI();
       };
 
-      const finish = () => {
-        done = true;
-        if (timerId) clearInterval(timerId);
-        const elapsedSec = Math.round((Date.now() - sessionStart) / 1000);
-        const stars = qs.filter(q => bookmarked.has(q.id));
-        practiceArea.innerHTML = `
-          <div class="practice-card">
-            <h2>연습 종료</h2>
-            <p>총 ${qs.length}문항 · 즐겨찾기 ${stars.length}문항 · 총 소요 ${fmtSec(elapsedSec)}</p>
-            ${stars.length ? `<div class="col">${stars.map(q => `<div class="chip" style="margin-bottom:8px">★ ${esc(q.text)}</div>`).join("")}</div>` : `<div class="empty">즐겨찾기 없음</div>`}
-            <div class="toolbar">
-              <button class="button small" onclick="location.reload()">홈으로 이동</button>
-            </div>
-          </div>
-        `;
-      };
-
       const updateTimerUI = () => {
         const timerEl = $("#timerText");
         const bar = $("#timerBarFill");
@@ -1007,6 +1009,7 @@
                 ${hasTimer ? `<button class="button ghost small" id="pauseBtn">⏸ 일시정지</button>
                 <button class="button ghost small" id="restartBtn">↺ 리셋</button>` : ""}
                 <button class="button ghost small" id="starBtn">${bookmarked.has(q.id) ? "★ 즐겨찾기" : "☆ 즐겨찾기"}</button>
+                <button class="button ghost small" id="finishBtn">연습 종료</button>
                 <button class="button small" id="nextBtn">${idx < qs.length - 1 ? "다음" : "종료"}</button>
               </div>
             </div>
@@ -1018,6 +1021,7 @@
           </div>
         `;
         $("#nextBtn").addEventListener("click", () => next(false));
+        $("#finishBtn").addEventListener("click", () => finish());
         $("#starBtn").addEventListener("click", () => {
           if (bookmarked.has(q.id)) bookmarked.delete(q.id);
           else bookmarked.add(q.id);
