@@ -37,7 +37,10 @@
   .divider{height:1px; background:var(--border); margin:8px 0}
   .subjects{display:flex; flex-direction:column; gap:6px; overflow:auto; padding-right:4px}
   .chip{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px; background:var(--chip); border:1px solid var(--border); cursor:pointer; white-space:nowrap}
-  .chip.active{outline:2px solid var(--accent)}
+  .chip.active {
+    background-color: rgba(30, 41, 59, 0.8);
+    border: 1px solid var(--border);
+  }
   .row{display:flex; align-items:center; gap:8px}
   .row-nowrap{display:flex; align-items:center; gap:8px; flex-wrap:nowrap}
   .col{display:flex; flex-direction:column; gap:8px}
@@ -84,6 +87,7 @@
     .sidebar.open{transform:translateY(0)}
     .grid-2 { grid-template-columns: 1fr; }
     .menu-btn{display:block}
+    .subjects { display: none; }
     
     /* Mobile-specific changes for subject table */
     .table thead th:nth-child(3),
