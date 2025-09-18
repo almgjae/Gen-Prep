@@ -21,6 +21,17 @@
   .app{display:grid; grid-template-columns: 280px 1fr; height:100%; transition: grid-template-columns .2s ease-in-out;}
   .app.collapsed { grid-template-columns: 0px 1fr; }
   .app.collapsed .sidebar { transform: translateX(-100%); transition: transform .2s ease-in-out; }
+  
+  /* ADDED: Style for full-screen practice mode */
+  .app.practice-mode {
+    grid-template-columns: 1fr;
+  }
+  .app.practice-mode .main {
+    width: 100%;
+    max-width: none;
+  }
+  /* END ADDED */
+
   .sidebar{
     border-right:1px solid var(--border); background:rgba(15,23,42,.08);
     backdrop-filter: blur(6px); padding:16px 12px; display:flex; flex-direction:column; gap:12px;
@@ -136,7 +147,7 @@
      crossorigin="anonymous"></script>
 </head>
 <body>
- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
      crossorigin="anonymous"></script>
 <div class="app" id="app">
   <aside class="sidebar" id="sidebar">
@@ -303,6 +314,7 @@
       }
     },
     route(){
+      // REMOVED: `this.app.classList.remove("practice-mode");` as it's better to handle it in the view function itself
       const hash = location.hash || "#/dashboard";
       this.renderSidebar();
       const [_, route, id] = hash.split("/");
@@ -320,6 +332,9 @@
 
     /* ---------- Views ---------- */
     viewDashboard(){
+      this.app.classList.remove("practice-mode");
+      this.sidebar.style.display = "";
+      $(".topbar").style.display = "";
       const recent = [...this.state.subjects].sort((a,b)=> (b.updatedAt||0)-(a.updatedAt||0)).slice(0,5);
       const unanswered = this.state.subjects.reduce((acc,s)=> acc + s.questions.filter(q=>!q.answer).length ,0);
       const totalQ = this.state.subjects.reduce((acc,s)=> acc + s.questions.length ,0);
@@ -342,6 +357,9 @@
     },
 
     viewSubjects(){
+      this.app.classList.remove("practice-mode");
+      this.sidebar.style.display = "";
+      $(".topbar").style.display = "";
       const list = [...this.state.subjects].sort((a,b)=> a.name.localeCompare(b.name,"ko"));
       this.view.innerHTML = `
         <div class="card">
@@ -382,6 +400,9 @@
     },
 
     viewSubject(id){
+      this.app.classList.remove("practice-mode");
+      this.sidebar.style.display = "";
+      $(".topbar").style.display = "";
       const s = this.state.subjects.find(x=>x.id===id);
       if(!s){ this.view.innerHTML = `<div class="empty">해당 교과가 없습니다.</div>`; return; }
       this.state.selectedSubjectId = id; this.save(); this.renderSidebar();
@@ -516,6 +537,9 @@
     },
     
     viewQuestions(){
+        this.app.classList.remove("practice-mode");
+        this.sidebar.style.display = "";
+        $(".topbar").style.display = "";
         // Get the first subject or null
         let selectedId = this.state.selectedSubjectId || this.state.subjects[0]?.id || null;
         if(selectedId) {
@@ -710,6 +734,9 @@
     },
 
     viewAllQuestions(){
+        this.app.classList.remove("practice-mode");
+        this.sidebar.style.display = "";
+        $(".topbar").style.display = "";
         const allQuestions = this.state.subjects.flatMap(s => 
           s.questions.map(q => ({...q, subjectName: s.name}))
         ).sort((a,b) => b.updatedAt - a.updatedAt);
@@ -763,6 +790,9 @@
     },
 
     viewAnalyze(){
+      this.app.classList.remove("practice-mode");
+      this.sidebar.style.display = "";
+      $(".topbar").style.display = "";
       const hash = new URLSearchParams(location.hash.slice(location.hash.indexOf('?')));
       const subId = hash.get('id');
       const s = subId ? this.state.subjects.find(x=>x.id===subId) : null;
@@ -837,6 +867,9 @@
     },
 
     viewPractice(){
+      this.app.classList.remove("practice-mode");
+      this.sidebar.style.display = "";
+      $(".topbar").style.display = "";
       const subs = this.state.subjects;
       this.view.innerHTML = `
         <div class="grid">
@@ -888,6 +921,10 @@
       practiceSettings.style.display = "none";
       practiceArea.style.display = "flex";
 
+      // ADDED: Set practice-mode class to the app container
+      this.app.classList.add("practice-mode");
+      // END ADDED
+
       $("#sidebar").style.display = "none";
       $(".topbar").style.display = "none";
 
@@ -916,6 +953,13 @@
         done = true;
         if (timerId) clearInterval(timerId);
         const elapsedSec = Math.round((Date.now() - sessionStart) / 1000);
+
+        // ADDED: Remove practice-mode class and show sidebar/topbar
+        this.app.classList.remove("practice-mode");
+        $("#sidebar").style.display = "";
+        $(".topbar").style.display = "";
+        // END ADDED
+
         const stars = qs.filter(q => bookmarked.has(q.id));
         practiceArea.innerHTML = `
           <div class="practice-card">
@@ -1043,6 +1087,9 @@
     },
 
     viewSettings(){
+      this.app.classList.remove("practice-mode");
+      this.sidebar.style.display = "";
+      $(".topbar").style.display = "";
       this.view.innerHTML = `
         <div class="grid grid-2">
           <div class="card">
@@ -1131,5 +1178,7 @@
 
   app.init();
 })();</script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
+     crossorigin="anonymous"></script>
 </body>
 </html>
