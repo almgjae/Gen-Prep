@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
-     crossorigin="anonymous"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>생기부 면접 대비</title>
@@ -245,7 +243,20 @@ ins.adsbygoogle, .adsbygoogle{ animation: none !important; transition: none !imp
 </style>
     
 
-</head>
+<style>
+/* --- AdSafe patch: begin --- */
+ins.adsbygoogle, .adsbygoogle{
+  display:block !important;
+  margin:16px auto !important;
+  max-width:100% !important;
+}
+.no-ads ins.adsbygoogle,
+.practice-mode ins.adsbygoogle{
+  display:none !important;
+  visibility:hidden !important;
+}
+/* --- AdSafe patch: end --- */
+</style></head>
 <body>
 <!-- Intro / Landing Overlay (no ads) -->
 <div id="intro-overlay" class="no-ads" data-adbreak="off" style="position:fixed; inset:0; z-index:9999; display:none;">
@@ -1562,6 +1573,51 @@ if (cameraEnabled && stream) {
 })();
 </script>
 
+
+
+<!-- --- AdSafe patch: dynamic Auto ads loader --- -->
+<script>
+(function(){
+  const ALLOW = new Set([
+    '#/dashboard', '#/subjects', '#/questions', '#/all-questions', '#/analyze', '#/settings', '#/'
+  ]);
+  let adsLoaded = false;
+  const ADS_URL = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454';
+
+  const route = () => (location.hash || '#/').replace(/\?.*$/, '');
+
+  const setPracticeGuard = () => {
+    document.documentElement.classList.toggle('practice-mode', route() === '#/practice');
+  };
+
+  const ensureAutoAds = () => {
+    const r = route();
+    if (adsLoaded || !ALLOW.has(r)) return;
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = ADS_URL;
+    s.crossOrigin = 'anonymous';
+    document.head.appendChild(s);
+    adsLoaded = true;
+  };
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#enterApp, #enter, #enter-hero');
+    if (!btn) return;
+    setTimeout(() => { setPracticeGuard(); ensureAutoAds(); }, 0);
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setPracticeGuard();
+    ensureAutoAds();
+  });
+  window.addEventListener('hashchange', () => {
+    setPracticeGuard();
+    ensureAutoAds();
+  });
+})();
+</script>
+<!-- --- AdSafe patch end --- -->
 
 </body>
 </html>
