@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
+     crossorigin="anonymous"></script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>생기부 면접 대비</title>
@@ -142,13 +145,14 @@
     border-radius:16px; padding:16px; max-width: 800px; width:100%;
   }
 
+
+  /* 광고 차단 마커 */
+  .no-ads{ /* no styles needed; used for clarity */ }
 </style>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
-     crossorigin="anonymous"></script>
+
 </head>
 <body>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
-     crossorigin="anonymous"></script>
+
 <div class="app" id="app">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
@@ -554,7 +558,15 @@
             <div class="grid grid-2">
                 <div class="card">
                     <h1>예상 질문 작성</h1>
+                    <!-- ✅ 안내 문구: 빈 화면 방지 + 학습 자료 성격 명확화 -->
+                    <div class="empty" style="margin:8px 0">
+                      <b>예상 질문 활용법</b><br>
+                      이 페이지에서는 선택한 교과의 생기부를 참고해 면접 질문을 직접 작성·정리합니다.<br>
+                      질문은 단순 암기가 아니라 <u>경험·근거·교과 연결</u>을 구조화하도록 설계되었습니다.
+                    </div>
                     <div class="divider"></div>
+                    <!-- 🚫 광고 차단: 입력/버튼 UI 전부 -->
+                    <div class="no-ads" data-adbreak="off">
                     <div class="col">
                         <label>교과 선택</label>
                         <select class="field" id="subjectSelector">
@@ -581,6 +593,7 @@
                         
                         <button class="button small" id="addQuestionBtn">➕ 예상 질문 추가</button>
                     </div>
+                    </div><!-- /no-ads -->
                 </div>
                 <div class="card">
                     <h2>예상 질문 목록</h2>
@@ -744,6 +757,14 @@
         this.view.innerHTML = `
           <div class="card">
             <h1>전체 질문 목록</h1>
+      <!-- ✅ 소개/카테고리 안내 추가 -->
+      <div class="empty" style="margin:8px 0">
+        <b>전체 질문 모음</b><br>
+        지금까지 등록된 질문을 한눈에 확인할 수 있습니다. 질문은
+        <u>실험 경험</u>, <u>학문적 태도</u>, <u>협업 경험</u>, <u>전공 연계</u> 등
+        다양한 주제를 포괄합니다. 아래 목록에서 즐겨찾기(<span class="kbd">★</span>)로
+        다시 연습할 문항을 표시해 보세요.
+      </div>
             <div class="muted">총 ${allQuestions.length}개의 질문이 있습니다.</div>
             <div class="divider"></div>
             <div id="qList">
@@ -801,7 +822,14 @@
         <div class="grid grid-2">
           <div class="card">
             <h1>생기부 분석</h1>
+            <!-- ✅ 입력 전 안내 문구 (빈 화면 방지) -->
+            <div class="empty" style="margin:8px 0">
+              <b>분석 안내</b><br>
+              생기부를 붙여넣으면 면접 대비에 필요한 <u>흐름 정리</u>, <u>키워드 정리</u>, <u>핵심 문장 정리</u>를 도와드립니다.
+            </div>
             <div class="divider"></div>
+            <!-- 🚫 광고 차단: 입력/버튼 UI 전부 -->
+            <div class="no-ads" data-adbreak="off">
             <div class="col">
               <label>교과 선택</label>
               <select class="field" id="subjectSelector">
@@ -816,7 +844,7 @@
               </div>
               <textarea id="srbTextarea" class="field" placeholder="여기에 생기부 내용을 붙여넣으세요.">${escAttr(s?.srb || '')}</textarea>
             </div>
-          </div>
+          </div><!-- /no-ads -->
           <div class="card">
             <h2>분석</h2>
             <div class="col">
@@ -873,7 +901,7 @@
       const subs = this.state.subjects;
       this.view.innerHTML = `
         <div class="grid">
-          <div class="card" id="practiceSettings">
+          <div class="card no-ads" id="practiceSettings" data-adbreak="off">
             <h1>연습 설정</h1>
             <div class="muted">연습할 교과, 질문 개수, 문항당 제한시간을 선택하세요.</div>
             <div class="divider"></div>
@@ -907,7 +935,7 @@
                 <button class="button small" id="startPractice">연습 시작</button>
             </div>
           </div>
-          <div class="practice-main" id="practiceArea" style="display: none;"></div>
+          <div class="practice-main no-ads" id="practiceArea" data-adbreak="off" style="display: none;"></div>
         </div>
       `;
       $("#startPractice").addEventListener("click", async ()=>{
@@ -1162,8 +1190,13 @@
       $(".topbar").style.display = "";
       this.view.innerHTML = `
         <div class="grid grid-2">
-          <div class="card">
+          <div class="card no-ads" data-adbreak="off">
             <h1>설정</h1>
+            <div class="empty" style="margin:8px 0">
+              <b>데이터 관리 안내</b><br>
+              이 페이지에서는 사용자가 입력한 질문과 답변 데이터를 안전하게 보관할 수 있습니다.<br>
+              <u>백업</u>으로 파일을 내려받고, <u>복원</u>으로 다시 불러올 수 있습니다. 주기적인 백업을 권장합니다.
+            </div>
             <h2>데이터</h2>
             <div class="row-nowrap">
               <button class="button small" id="backupBtn">💾 백업</button>
@@ -1248,7 +1281,6 @@
 
   app.init();
 })();</script>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3323631723585454"
-     crossorigin="anonymous"></script>
+  
 </body>
 </html>
